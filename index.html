@@ -1,0 +1,2909 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Messenger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary-bg: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            --message-bg: linear-gradient(to right, #4facfe, #00f2fe);
+            --text-color: #fff;
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --input-color: #333;
+            --other-msg-bg: rgba(255, 255, 255, 0.15);
+            --header-bg: rgba(0, 0, 0, 0.3);
+            --online-bg: rgba(0, 0, 0, 0.2);
+            --system-msg-bg: rgba(0, 0, 0, 0.3);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --action-btn-bg: rgba(160, 210, 235, 0.2);
+            --action-btn-color: #a0d2eb;
+            --search-bg: rgba(0, 0, 0, 0.15);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            --profile-bg: rgba(0, 0, 0, 0.5);
+        }
+        
+        .light-theme {
+            --primary-bg: linear-gradient(135deg, #f5f7fa, #e4e7eb, #f1f3f6);
+            --message-bg: linear-gradient(to right, #4facfe, #00f2fe);
+            --text-color: #2d3748;
+            --input-bg: #ffffff;
+            --input-color: #2d3748;
+            --other-msg-bg: #ffffff;
+            --header-bg: #ffffff;
+            --online-bg: rgba(0, 0, 0, 0.05);
+            --system-msg-bg: rgba(0, 0, 0, 0.07);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --action-btn-bg: rgba(160, 210, 235, 0.3);
+            --action-btn-color: #2b6cb0;
+            --search-bg: rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --profile-bg: rgba(255, 255, 255, 0.9);
+        }
+        
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body {
+            background: var(--primary-bg);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+        
+        .header {
+            padding: 12px 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+        
+        .burger-menu {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .burger-menu:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        .logo {
+            margin-right: 8px;
+            font-size: 22px;
+        }
+        
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .auth-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 30px auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 400px;
+            box-shadow: var(--shadow);
+        }
+        
+        .auth-title {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #a0d2eb;
+        }
+        
+        .light-theme .auth-title {
+            color: #2b6cb0;
+        }
+        
+        .auth-container input {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .auth-container input:focus {
+            border-color: #a0d2eb;
+            box-shadow: 0 0 0 2px rgba(160, 210, 235, 0.2);
+        }
+        
+        .auth-container input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .light-theme .auth-container input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .auth-container button {
+            padding: 12px;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .auth-container button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .chat-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            padding: 10px 12px;
+            background: var(--header-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+        
+        .chat-header-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .chat-menu {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .chat-menu:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        .chat-menu-content {
+            position: absolute;
+            top: 100%;
+            right: 10px;
+            background: var(--header-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 1000;
+            min-width: 180px;
+        }
+        
+        .chat-menu-content.active {
+            display: flex;
+        }
+        
+        .chat-menu-item {
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .chat-menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .chat-menu-item.danger {
+            color: #ff6b6b;
+        }
+        
+        .user-name {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            overflow: hidden;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .search-container {
+            padding: 10px;
+            background: var(--search-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .search-container input {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-container input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+        }
+        
+        .search-container button {
+            padding: 8px 15px;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .search-container button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .chats-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.03);
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+        
+        .light-theme .chats-list {
+            background: rgba(0, 0, 0, 0.01);
+        }
+        
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .chat-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .chat-item.unread {
+            background: rgba(79, 172, 254, 0.2);
+            border-left: 3px solid #4facfe;
+        }
+        
+        .chat-item-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        
+        .chat-item-info {
+            flex: 1;
+        }
+        
+        .chat-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .chat-item-name {
+            font-weight: bold;
+        }
+        
+        .chat-item-time {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+        
+        .chat-item-last-message {
+            font-size: 13px;
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .chat-item-unread {
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .users-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.03);
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+        
+        .light-theme .users-list {
+            background: rgba(0, 0, 0, 0.01);
+        }
+        
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .user-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .user-item-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        
+        .user-item-info {
+            flex: 1;
+        }
+        
+        .user-item-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .user-item-status {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .user-item-status.online {
+            color: #4CAF50;
+        }
+        
+        .user-item-status.offline {
+            color: #ccc;
+        }
+        
+        .messages-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.03);
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+        
+        .light-theme .messages-wrapper {
+            background: rgba(0, 0, 0, 0.01);
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 10px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: messageAppear 0.3s ease forwards;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .my-message {
+            align-self: flex-end;
+            background: var(--message-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .other-message {
+            align-self: flex-start;
+            background: var(--other-msg-bg);
+            color: var(--text-color);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .sender {
+            font-size: 11px;
+            margin-bottom: 3px;
+            color: #a0d2eb;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .light-theme .sender {
+            color: #2b6cb0;
+        }
+        
+        .timestamp {
+            font-size: 9px;
+            text-align: right;
+            margin-top: 3px;
+            opacity: 0.7;
+        }
+        
+        .input-area {
+            display: flex;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.05);
+            gap: 8px;
+            border-top: 1px solid var(--border-color);
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            background: var(--input-bg);
+            color: var(--input-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .input-area input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+        }
+        
+        .input-area button {
+            padding: 10px 15px;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .input-area button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .empty-chat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: #a0d2eb;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .empty-chat i {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .empty-chat p {
+            font-size: 16px;
+            max-width: 300px;
+        }
+        
+        .light-theme .empty-chat {
+            color: #2b6cb0;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background: var(--primary-bg);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .modal-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .modal-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .modal-btn.primary {
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            color: white;
+        }
+        
+        .modal-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+        
+        .profile-modal-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            overflow: hidden;
+        }
+        
+        .profile-name {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .profile-info {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .profile-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .profile-info-label {
+            font-weight: 500;
+            opacity: 0.8;
+        }
+        
+        .profile-info-value {
+            font-weight: 600;
+        }
+        
+        .profile-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .profile-action-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .profile-action-btn.primary {
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            color: white;
+        }
+        
+        .profile-action-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+        
+        .profile-action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .burger-menu-content {
+            position: absolute;
+            top: 100%;
+            left: 10px;
+            background: var(--header-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 1000;
+            min-width: 220px;
+        }
+        
+        .burger-menu-content.active {
+            display: flex;
+        }
+        
+        .burger-menu-item {
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .burger-menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .loading-dots {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #a0d2eb;
+            animation: loading 1.4s infinite ease-in-out both;
+        }
+        
+        .light-theme .loading-dot {
+            background: #2b6cb0;
+        }
+        
+        .loading-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .loading-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes loading {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid #4facfe;
+            background: rgba(79, 172, 254, 0.1);
+        }
+        
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .theme-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .theme-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+        }
+        
+        .dark-theme { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
+        .light-theme-preview { background: linear-gradient(135deg, #f5f7fa, #e4e7eb, #f1f3f6); }
+        
+        .status-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .status-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .status-online { background: #4CAF50; }
+        .status-away { background: #FF9800; }
+        .status-busy { background: #F44336; }
+        .status-offline { background: #9E9E9E; }
+        
+        .settings-section {
+            margin-bottom: 20px;
+        }
+        
+        .settings-section h4 {
+            margin-bottom: 10px;
+            color: #a0d2eb;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .light-theme .settings-section h4 {
+            color: #2b6cb0;
+        }
+        
+        .settings-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4facfe;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .privacy-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .privacy-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .privacy-option.active {
+            background: rgba(79, 172, 254, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px;
+                font-size: 18px;
+            }
+            
+            .auth-container {
+                padding: 15px;
+                margin: 20px auto;
+                width: 95%;
+            }
+            
+            .chat-header {
+                padding: 8px 10px;
+                font-size: 12px;
+                flex-wrap: wrap;
+            }
+            
+            .message {
+                max-width: 90%;
+                font-size: 13px;
+                padding: 8px 10px;
+            }
+            
+            .input-area {
+                padding: 10px;
+            }
+            
+            .input-area input {
+                padding: 10px;
+                font-size: 13px;
+            }
+            
+            .input-area button {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                font-size: 16px;
+            }
+            
+            .auth-container {
+                margin: 15px auto;
+                padding: 12px;
+            }
+            
+            .auth-title {
+                font-size: 14px;
+            }
+            
+            .auth-container input {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            .auth-container button {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            .user-name {
+                font-size: 13px;
+            }
+            
+            .messages-wrapper {
+                padding: 8px;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <div>
+                <button class="burger-menu" id="burgerMenu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="burger-menu-content" id="burgerMenuContent">
+                    <div class="burger-menu-item" id="profileBtn">
+                        <i class="fas fa-user"></i> Профиль
+                    </div>
+                    <div class="burger-menu-item" id="statusBtn">
+                        <i class="fas fa-circle"></i> Статус
+                    </div>
+                    <div class="burger-menu-item" id="themeBtn">
+                        <i class="fas fa-palette"></i> Тема
+                    </div>
+                    <div class="burger-menu-item" id="notificationsBtn">
+                        <i class="fas fa-bell"></i> Уведомления
+                    </div>
+                    <div class="burger-menu-item" id="privacyBtn">
+                        <i class="fas fa-shield-alt"></i> Приватность
+                    </div>
+                    <div class="burger-menu-item" id="storageBtn">
+                        <i class="fas fa-database"></i> Хранилище
+                    </div>
+                    <div class="burger-menu-item" id="backupBtn">
+                        <i class="fas fa-cloud-upload-alt"></i> Резервная копия
+                    </div>
+                    <div class="burger-menu-item" id="securityBtn">
+                        <i class="fas fa-lock"></i> Безопасность
+                    </div>
+                    <div class="burger-menu-item" id="languageBtn">
+                        <i class="fas fa-globe"></i> Язык
+                    </div>
+                    <div class="burger-menu-item" id="clearChatsBtn">
+                        <i class="fas fa-trash"></i> Очистить чаты
+                    </div>
+                    <div class="burger-menu-item" id="exportDataBtn">
+                        <i class="fas fa-download"></i> Экспорт данных
+                    </div>
+                    <div class="burger-menu-item" id="aboutBtn">
+                        <i class="fas fa-info-circle"></i> О программе
+                    </div>
+                    <div class="burger-menu-item" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Выйти
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div class="logo">⚛</div>
+                <div>Quantum Messenger</div>
+            </div>
+            <div></div>
+        </div>
+        
+        <div class="main-container">
+            <div class="auth-container" id="authContainer">
+                <div class="auth-title">Войдите в систему с вашим именем</div>
+                <input type="text" id="nameInput" placeholder="Введите ваше имя">
+                <button id="enterBtn">Войти в чат</button>
+                <div>Ваше имя будет сохранено для будущих посещений</div>
+            </div>
+            
+            <div class="chat-wrapper" id="chatWrapper" style="display: none;">
+                <div class="tabs">
+                    <div class="tab active" data-tab="chats">Мои чаты</div>
+                    <div class="tab" data-tab="search">Поиск</div>
+                </div>
+                
+                <div class="tab-content active" id="tab-chats">
+                    <div class="chats-list" id="chatsList">
+                        <div class="empty-chat">
+                            <i class="fas fa-comments"></i>
+                            <p>У вас пока нет чатов</p>
+                            <p style="font-size: 14px; margin-top: 10px;">Найдите пользователя во вкладке "Поиск"</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tab-search">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Введите юзернейм собеседника...">
+                        <button id="searchBtn">Найти</button>
+                    </div>
+                    
+                    <div class="users-list" id="usersList">
+                        <div class="empty-chat">
+                            <i class="fas fa-search"></i>
+                            <p>Найдите пользователя по юзернейму, чтобы начать общение</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-wrapper" id="chatWindow" style="display: none;">
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <button class="burger-menu" id="backToChatsBtn">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div class="user-avatar" id="chatUserAvatar">
+                            <span id="chatAvatarInitial">U</span>
+                        </div>
+                        <div class="user-name">
+                            <span id="chatUserName"></span>
+                            <span id="chatUserStatus" style="font-size: 11px; opacity: 0.7;"></span>
+                        </div>
+                    </div>
+                    <div class="chat-header-actions">
+                        <button class="chat-menu" id="chatMenuBtn">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="chat-menu-content" id="chatMenuContent">
+                            <div class="chat-menu-item" id="chatInfoBtn">
+                                <i class="fas fa-info-circle"></i> Информация о чате
+                            </div>
+                            <div class="chat-menu-item" id="clearChatBtn">
+                                <i class="fas fa-broom"></i> Очистить историю
+                            </div>
+                            <div class="chat-menu-item danger" id="blockUserBtn">
+                                <i class="fas fa-ban"></i> Заблокировать
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="messages-wrapper" id="messagesContainer">
+                    <div class="empty-chat">
+                        <i class="fas fa-comments"></i>
+                        <p>Начните общение с этим пользователем</p>
+                    </div>
+                </div>
+                
+                <div class="input-area">
+                    <input type="text" id="messageInput" placeholder="Введите ваше сообщение..." autocomplete="off">
+                    <button id="sendBtn" disabled>
+                        <i class="fas fa-paper-plane"></i> <span>Отправить</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <div class="profile-modal-content">
+                <div class="profile-avatar" id="profileAvatar">
+                    <span id="profileAvatarInitial">U</span>
+                </div>
+                <div class="profile-name" id="profileName"></div>
+                
+                <div class="profile-info">
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Юзернейм:</span>
+                        <input type="text" id="usernameInput" value="" style="background: transparent; border: none; color: var(--text-color); text-align: right; outline: none;">
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">ID:</span>
+                        <span class="profile-info-value" id="profileId"></span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Статус:</span>
+                        <span class="profile-info-value" id="profileStatus">Онлайн</span>
+                    </div>
+                </div>
+                
+                <div class="profile-actions">
+                    <button class="profile-action-btn primary" id="saveProfileBtn">
+                        <i class="fas fa-save"></i> Сохранить
+                    </button>
+                    <button class="profile-action-btn secondary" id="closeProfileBtn">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="themeModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Выберите тему</h3>
+            <div class="theme-option" data-theme="dark">
+                <div class="theme-preview dark-theme"></div>
+                <span>Тёмная тема</span>
+            </div>
+            <div class="theme-option" data-theme="light">
+                <div class="theme-preview light-theme-preview"></div>
+                <span>Светлая тема</span>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" id="closeThemeBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="statusModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Выберите статус</h3>
+            <div class="status-option" data-status="online">
+                <div class="status-indicator status-online"></div>
+                <span>Онлайн</span>
+            </div>
+            <div class="status-option" data-status="away">
+                <div class="status-indicator status-away"></div>
+                <span>Отошёл</span>
+            </div>
+            <div class="status-option" data-status="busy">
+                <div class="status-indicator status-busy"></div>
+                <span>Занят</span>
+            </div>
+            <div class="status-option" data-status="offline">
+                <div class="status-indicator status-offline"></div>
+                <span>Не в сети</span>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" id="closeStatusBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="notificationsModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Настройки уведомлений</h3>
+            <div class="settings-section">
+                <div class="settings-option">
+                    <span>Включить уведомления</span>
+                    <label class="switch">
+                        <input type="checkbox" id="notificationsToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <span>Звук уведомлений</span>
+                    <label class="switch">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <span>Вибросигнал</span>
+                    <label class="switch">
+                        <input type="checkbox" id="vibrationToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" id="saveNotificationsBtn">Сохранить</button>
+                <button class="modal-btn secondary" id="closeNotificationsBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="privacyModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Настройки приватности</h3>
+            <div class="settings-section">
+                <h4><i class="fas fa-user-friends"></i> Кто может писать мне</h4>
+                <div class="privacy-option active" data-privacy="all">
+                    <i class="fas fa-globe"></i>
+                    <span>Все пользователи</span>
+                </div>
+                <div class="privacy-option" data-privacy="contacts">
+                    <i class="fas fa-users"></i>
+                    <span>Только контакты</span>
+                </div>
+                <div class="privacy-option" data-privacy="nobody">
+                    <i class="fas fa-ban"></i>
+                    <span>Никто</span>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4><i class="fas fa-eye"></i> Видимость профиля</h4>
+                <div class="settings-option">
+                    <span>Показывать статус онлайн</span>
+                    <label class="switch">
+                        <input type="checkbox" id="onlineStatusToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <span>Показывать время последнего посещения</span>
+                    <label class="switch">
+                        <input type="checkbox" id="lastSeenToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" id="savePrivacyBtn">Сохранить</button>
+                <button class="modal-btn secondary" id="closePrivacyBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="storageModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px; text-align: center;">Хранилище</h3>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 48px; margin-bottom: 10px;">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div style="font-size: 24px; font-weight: bold;" id="storageUsed">0 MB</div>
+                <div style="font-size: 14px; opacity: 0.7;">Использовано</div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-option">
+                    <span>Автоочистка старых сообщений</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autoCleanupToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <span>Сжимать изображения</span>
+                    <label class="switch">
+                        <input type="checkbox" id="compressImagesToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" id="clearStorageBtn">Очистить кэш</button>
+                <button class="modal-btn secondary" id="closeStorageBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="backupModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px; text-align: center;">Резервная копия</h3>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 48px; margin-bottom: 10px;">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <p>Создайте резервную копию ваших чатов и настроек</p>
+            </div>
+            <div class="profile-info">
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Последняя копия:</span>
+                    <span class="profile-info-value" id="lastBackupDate">Никогда</span>
+                </div>
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Размер данных:</span>
+                    <span class="profile-info-value" id="backupSize">0 MB</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" id="createBackupBtn">Создать копию</button>
+                <button class="modal-btn secondary" id="closeBackupBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="securityModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Безопасность</h3>
+            <div class="settings-section">
+                <h4><i class="fas fa-fingerprint"></i> Безопасность аккаунта</h4>
+                <div class="settings-option">
+                    <span>Двухфакторная аутентификация</span>
+                    <label class="switch">
+                        <input type="checkbox" id="twoFactorToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <span>Уведомления о входе</span>
+                    <label class="switch">
+                        <input type="checkbox" id="loginAlertsToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4><i class="fas fa-shield-alt"></i> Защита чатов</h4>
+                <div class="settings-option">
+                    <span>Шифрование сообщений</span>
+                    <label class="switch">
+                        <input type="checkbox" id="encryptionToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <span>Самоуничтожающиеся сообщения</span>
+                    <label class="switch">
+                        <input type="checkbox" id="selfDestructToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" id="saveSecurityBtn">Сохранить</button>
+                <button class="modal-btn secondary" id="closeSecurityBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="languageModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Выберите язык</h3>
+            <div class="privacy-option active" data-lang="ru">
+                <i class="fas fa-language"></i>
+                <span>Русский</span>
+            </div>
+            <div class="privacy-option" data-lang="en">
+                <i class="fas fa-language"></i>
+                <span>English</span>
+            </div>
+            <div class="privacy-option" data-lang="es">
+                <i class="fas fa-language"></i>
+                <span>Español</span>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" id="closeLanguageBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="aboutModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px; text-align: center;">Quantum Messenger</h3>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 48px; margin-bottom: 10px;">⚛</div>
+                <p>Версия 2.0.0</p>
+            </div>
+            <div class="profile-info">
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Разработчик:</span>
+                    <span class="profile-info-value">Quantum Team</span>
+                </div>
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Дата сборки:</span>
+                    <span class="profile-info-value" id="buildDate"></span>
+                </div>
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Лицензия:</span>
+                    <span class="profile-info-value">MIT Open Source</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" id="closeAboutBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="chatInfoModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px; text-align: center;">Информация о чате</h3>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="user-avatar" style="width: 60px; height: 60px; margin: 0 auto 10px;">
+                    <span id="chatInfoAvatar">U</span>
+                </div>
+                <div class="profile-name" id="chatInfoName"></div>
+                <div style="font-size: 14px; opacity: 0.7;" id="chatInfoStatus"></div>
+            </div>
+            <div class="profile-info">
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Создан:</span>
+                    <span class="profile-info-value" id="chatCreatedDate"></span>
+                </div>
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Сообщений:</span>
+                    <span class="profile-info-value" id="chatMessagesCount">0</span>
+                </div>
+                <div class="profile-info-item">
+                    <span class="profile-info-label">Последняя активность:</span>
+                    <span class="profile-info-value" id="chatLastActivity"></span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" id="closeChatInfoBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // Конфигурация Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbraqwE-buTjLjvHOCbSSEM39AoSwQnjE",
+            authDomain: "quantu-57490.firebaseapp.com",
+            databaseURL: "https://quantu-57490-default-rtdb.firebaseio.com",
+            projectId: "quantu-57490",
+            storageBucket: "quantu-57490.firebasestorage.app",
+            messagingSenderId: "651950401509",
+            appId: "1:651950401509:web:c58bc0d09783a6e4ce710c"
+        };
+
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Получение элементов DOM
+        const authContainer = document.getElementById('authContainer');
+        const chatWrapper = document.getElementById('chatWrapper');
+        const chatWindow = document.getElementById('chatWindow');
+        
+        const nameInput = document.getElementById('nameInput');
+        const enterBtn = document.getElementById('enterBtn');
+        const burgerMenu = document.getElementById('burgerMenu');
+        const burgerMenuContent = document.getElementById('burgerMenuContent');
+        
+        // Кнопки бургер-меню
+        const profileBtn = document.getElementById('profileBtn');
+        const statusBtn = document.getElementById('statusBtn');
+        const themeBtn = document.getElementById('themeBtn');
+        const notificationsBtn = document.getElementById('notificationsBtn');
+        const privacyBtn = document.getElementById('privacyBtn');
+        const storageBtn = document.getElementById('storageBtn');
+        const backupBtn = document.getElementById('backupBtn');
+        const securityBtn = document.getElementById('securityBtn');
+        const languageBtn = document.getElementById('languageBtn');
+        const clearChatsBtn = document.getElementById('clearChatsBtn');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const aboutBtn = document.getElementById('aboutBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        // Элементы чата
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const usersList = document.getElementById('usersList');
+        const chatsList = document.getElementById('chatsList');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const backToChatsBtn = document.getElementById('backToChatsBtn');
+        const chatUserName = document.getElementById('chatUserName');
+        const chatUserStatus = document.getElementById('chatUserStatus');
+        const chatUserAvatar = document.getElementById('chatUserAvatar');
+        const chatAvatarInitial = document.getElementById('chatAvatarInitial');
+        const chatMenuBtn = document.getElementById('chatMenuBtn');
+        const chatMenuContent = document.getElementById('chatMenuContent');
+        const chatInfoBtn = document.getElementById('chatInfoBtn');
+        const clearChatBtn = document.getElementById('clearChatBtn');
+        const blockUserBtn = document.getElementById('blockUserBtn');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        // Модальные окна
+        const profileModal = document.getElementById('profileModal');
+        const themeModal = document.getElementById('themeModal');
+        const statusModal = document.getElementById('statusModal');
+        const notificationsModal = document.getElementById('notificationsModal');
+        const privacyModal = document.getElementById('privacyModal');
+        const storageModal = document.getElementById('storageModal');
+        const backupModal = document.getElementById('backupModal');
+        const securityModal = document.getElementById('securityModal');
+        const languageModal = document.getElementById('languageModal');
+        const aboutModal = document.getElementById('aboutModal');
+        const chatInfoModal = document.getElementById('chatInfoModal');
+        
+        // Элементы профиля
+        const profileName = document.getElementById('profileName');
+        const profileAvatar = document.getElementById('profileAvatar');
+        const profileAvatarInitial = document.getElementById('profileAvatarInitial');
+        const profileId = document.getElementById('profileId');
+        const profileStatus = document.getElementById('profileStatus');
+        const usernameInput = document.getElementById('usernameInput');
+        const saveProfileBtn = document.getElementById('saveProfileBtn');
+        const closeProfileBtn = document.getElementById('closeProfileBtn');
+        
+        // Элементы информации о чате
+        const chatInfoName = document.getElementById('chatInfoName');
+        const chatInfoAvatar = document.getElementById('chatInfoAvatar');
+        const chatInfoStatus = document.getElementById('chatInfoStatus');
+        const chatCreatedDate = document.getElementById('chatCreatedDate');
+        const chatMessagesCount = document.getElementById('chatMessagesCount');
+        const chatLastActivity = document.getElementById('chatLastActivity');
+        const closeChatInfoBtn = document.getElementById('closeChatInfoBtn');
+        
+        // Кнопки закрытия модальных окон
+        const closeThemeBtn = document.getElementById('closeThemeBtn');
+        const closeStatusBtn = document.getElementById('closeStatusBtn');
+        const closeNotificationsBtn = document.getElementById('closeNotificationsBtn');
+        const closePrivacyBtn = document.getElementById('closePrivacyBtn');
+        const closeStorageBtn = document.getElementById('closeStorageBtn');
+        const closeBackupBtn = document.getElementById('closeBackupBtn');
+        const closeSecurityBtn = document.getElementById('closeSecurityBtn');
+        const closeLanguageBtn = document.getElementById('closeLanguageBtn');
+        const closeAboutBtn = document.getElementById('closeAboutBtn');
+        
+        // Настройки
+        const buildDate = document.getElementById('buildDate');
+        const themeOptions = document.querySelectorAll('.theme-option');
+        const statusOptions = document.querySelectorAll('.status-option');
+        const privacyOptions = document.querySelectorAll('.privacy-option');
+        const languageOptions = document.querySelectorAll('[data-lang]');
+        
+        // Переменные состояния
+        let currentUser = '';
+        let userId = '';
+        let currentChatWith = null;
+        let currentChatWithName = '';
+        let currentChatId = '';
+        let userColor = '';
+        let messagesListener = null;
+        let chatsListener = null;
+        let unreadMessages = {};
+        let userStatus = 'online';
+        let userSettings = {};
+        
+        // Инициализация при загрузке страницы
+        window.addEventListener('load', () => {
+            // Устанавливаем дату сборки
+            buildDate.textContent = new Date().toLocaleDateString();
+            
+            // Загружаем настройки пользователя
+            loadUserSettings();
+            
+            // Проверяем сохраненные данные пользователя
+            const savedName = localStorage.getItem('quantumUsername');
+            const savedUserId = localStorage.getItem('quantumUserId');
+            const savedTheme = localStorage.getItem('quantumTheme');
+            const savedStatus = localStorage.getItem('quantumStatus');
+            
+            // Применяем сохраненные настройки
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            if (savedStatus) {
+                userStatus = savedStatus;
+            }
+            
+            if (savedName && savedUserId) {
+                nameInput.value = savedName;
+                userId = savedUserId;
+                currentUser = savedName;
+                
+                // Автоматически входим в чат
+                setTimeout(enterChat, 100);
+            } else {
+                // Генерируем новый ID пользователя
+                userId = generateUserId();
+                localStorage.setItem('quantumUserId', userId);
+            }
+            
+            // Загружаем непрочитанные сообщения
+            loadUnreadMessages();
+            
+            // Фокусируемся на поле ввода имени
+            nameInput.focus();
+            
+            // Инициализируем обработчики событий
+            initEventListeners();
+        });
+        
+        // Загрузка настроек пользователя
+        function loadUserSettings() {
+            const savedSettings = localStorage.getItem('quantumSettings');
+            if (savedSettings) {
+                userSettings = JSON.parse(savedSettings);
+            } else {
+                // Настройки по умолчанию
+                userSettings = {
+                    notifications: true,
+                    sound: true,
+                    vibration: false,
+                    privacy: 'all',
+                    onlineStatus: true,
+                    lastSeen: true,
+                    autoCleanup: false,
+                    compressImages: true,
+                    twoFactor: false,
+                    loginAlerts: true,
+                    encryption: true,
+                    selfDestruct: false
+                };
+                saveUserSettings();
+            }
+        }
+        
+        // Сохранение настроек пользователя
+        function saveUserSettings() {
+            localStorage.setItem('quantumSettings', JSON.stringify(userSettings));
+        }
+        
+        // Инициализация обработчиков событий
+        function initEventListeners() {
+            enterBtn.addEventListener('click', enterChat);
+            
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') enterChat();
+            });
+            
+            burgerMenu.addEventListener('click', () => {
+                burgerMenuContent.classList.toggle('active');
+            });
+            
+            // Закрытие меню при клике вне его
+            document.addEventListener('click', (e) => {
+                if (!burgerMenu.contains(e.target) && !burgerMenuContent.contains(e.target)) {
+                    burgerMenuContent.classList.remove('active');
+                }
+                if (!chatMenuBtn.contains(e.target) && !chatMenuContent.contains(e.target)) {
+                    chatMenuContent.classList.remove('active');
+                }
+            });
+            
+            // Обработчики бургер-меню
+            profileBtn.addEventListener('click', showProfile);
+            statusBtn.addEventListener('click', showStatusModal);
+            themeBtn.addEventListener('click', showThemeModal);
+            notificationsBtn.addEventListener('click', showNotificationsModal);
+            privacyBtn.addEventListener('click', showPrivacyModal);
+            storageBtn.addEventListener('click', showStorageModal);
+            backupBtn.addEventListener('click', showBackupModal);
+            securityBtn.addEventListener('click', showSecurityModal);
+            languageBtn.addEventListener('click', showLanguageModal);
+            clearChatsBtn.addEventListener('click', clearAllChats);
+            exportDataBtn.addEventListener('click', exportUserData);
+            aboutBtn.addEventListener('click', showAboutModal);
+            
+            logoutBtn.addEventListener('click', () => {
+                if (confirm("Вы уверены, что хотите выйти?")) {
+                    // Удаляем слушатели
+                    removeAllListeners();
+                    
+                    // Обновляем статус пользователя
+                    if (userId) {
+                        database.ref('profiles/' + userId).update({
+                            isOnline: false,
+                            lastOnline: Date.now(),
+                            status: 'offline'
+                        });
+                    }
+                    
+                    localStorage.removeItem('quantumUsername');
+                    localStorage.removeItem('quantumUserId');
+                    window.location.reload();
+                }
+            });
+            
+            // Обработчики вкладок
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Убираем активный класс у всех вкладок и контента
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Добавляем активный класс к выбранной вкладке и контенту
+                    tab.classList.add('active');
+                    document.getElementById(`tab-${tabId}`).classList.add('active');
+                    
+                    // Если переключились на чаты, обновляем список
+                    if (tabId === 'chats') {
+                        loadChatsList();
+                    }
+                });
+            });
+            
+            searchBtn.addEventListener('click', performSearch);
+            
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+            
+            backToChatsBtn.addEventListener('click', backToChats);
+            
+            chatMenuBtn.addEventListener('click', () => {
+                chatMenuContent.classList.toggle('active');
+            });
+            
+            // Обработчики меню чата
+            chatInfoBtn.addEventListener('click', showChatInfo);
+            clearChatBtn.addEventListener('click', clearChatHistory);
+            blockUserBtn.addEventListener('click', blockUser);
+            
+            messageInput.addEventListener('input', () => {
+                sendBtn.disabled = messageInput.value.trim() === '';
+            });
+            
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            sendBtn.addEventListener('click', sendMessage);
+            
+            saveProfileBtn.addEventListener('click', saveProfile);
+            
+            closeProfileBtn.addEventListener('click', () => {
+                profileModal.classList.remove('active');
+            });
+            
+            // Обработчики модальных окон
+            closeThemeBtn.addEventListener('click', () => themeModal.classList.remove('active'));
+            closeStatusBtn.addEventListener('click', () => statusModal.classList.remove('active'));
+            closeNotificationsBtn.addEventListener('click', () => notificationsModal.classList.remove('active'));
+            closePrivacyBtn.addEventListener('click', () => privacyModal.classList.remove('active'));
+            closeStorageBtn.addEventListener('click', () => storageModal.classList.remove('active'));
+            closeBackupBtn.addEventListener('click', () => backupModal.classList.remove('active'));
+            closeSecurityBtn.addEventListener('click', () => securityModal.classList.remove('active'));
+            closeLanguageBtn.addEventListener('click', () => languageModal.classList.remove('active'));
+            closeAboutBtn.addEventListener('click', () => aboutModal.classList.remove('active'));
+            closeChatInfoBtn.addEventListener('click', () => chatInfoModal.classList.remove('active'));
+            
+            // Обработчики выбора темы
+            themeOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const theme = option.getAttribute('data-theme');
+                    changeTheme(theme);
+                });
+            });
+            
+            // Обработчики выбора статуса
+            statusOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const status = option.getAttribute('data-status');
+                    changeStatus(status);
+                });
+            });
+            
+            // Обработчики настроек приватности
+            privacyOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.privacy-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    option.classList.add('active');
+                    const privacy = option.getAttribute('data-privacy');
+                    userSettings.privacy = privacy;
+                    saveUserSettings();
+                    showNotification("Настройки приватности обновлены");
+                });
+            });
+            
+            // Обработчики выбора языка
+            languageOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.privacy-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    option.classList.add('active');
+                    const lang = option.getAttribute('data-lang');
+                    showNotification(`Язык изменен на ${lang === 'ru' ? 'Русский' : lang === 'en' ? 'English' : 'Español'}`);
+                });
+            });
+            
+            // Обработчики переключателей
+            document.getElementById('notificationsToggle').addEventListener('change', function() {
+                userSettings.notifications = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('soundToggle').addEventListener('change', function() {
+                userSettings.sound = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('vibrationToggle').addEventListener('change', function() {
+                userSettings.vibration = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('onlineStatusToggle').addEventListener('change', function() {
+                userSettings.onlineStatus = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('lastSeenToggle').addEventListener('change', function() {
+                userSettings.lastSeen = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('autoCleanupToggle').addEventListener('change', function() {
+                userSettings.autoCleanup = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('compressImagesToggle').addEventListener('change', function() {
+                userSettings.compressImages = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('twoFactorToggle').addEventListener('change', function() {
+                userSettings.twoFactor = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('loginAlertsToggle').addEventListener('change', function() {
+                userSettings.loginAlerts = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('encryptionToggle').addEventListener('change', function() {
+                userSettings.encryption = this.checked;
+                saveUserSettings();
+            });
+            
+            document.getElementById('selfDestructToggle').addEventListener('change', function() {
+                userSettings.selfDestruct = this.checked;
+                saveUserSettings();
+            });
+            
+            // Кнопки сохранения
+            document.getElementById('saveNotificationsBtn').addEventListener('click', () => {
+                showNotification("Настройки уведомлений сохранены");
+                notificationsModal.classList.remove('active');
+            });
+            
+            document.getElementById('savePrivacyBtn').addEventListener('click', () => {
+                showNotification("Настройки приватности сохранены");
+                privacyModal.classList.remove('active');
+            });
+            
+            document.getElementById('saveSecurityBtn').addEventListener('click', () => {
+                showNotification("Настройки безопасности сохранены");
+                securityModal.classList.remove('active');
+            });
+            
+            document.getElementById('clearStorageBtn').addEventListener('click', clearStorage);
+            document.getElementById('createBackupBtn').addEventListener('click', createBackup);
+        }
+        
+        // Генерация ID пользователя
+        function generateUserId() {
+            return 'user-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
+        }
+        
+        // Генерация цвета для пользователя
+        function generateUserColor() {
+            const colors = ['#4facfe', '#00f2fe', '#a0d2eb', '#7fdbda', '#6a9bd8'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        // Вход в чат
+        function enterChat() {
+            const name = nameInput.value.trim();
+            
+            if (name) {
+                currentUser = name;
+                userColor = generateUserColor();
+                
+                // Сохраняем имя пользователя
+                localStorage.setItem('quantumUsername', name);
+                
+                // Переключаем видимость контейнеров
+                authContainer.style.display = 'none';
+                chatWrapper.style.display = 'flex';
+                
+                // Настраиваем профиль пользователя
+                setupUserProfile();
+                
+                // Загружаем список чатов
+                loadChatsList();
+                
+                // Показываем уведомление о входе
+                showNotification(`Добро пожаловать, ${name}!`);
+            } else {
+                alert("Пожалуйста, введите ваше имя");
+                nameInput.focus();
+            }
+        }
+        
+        // Настройка профиля пользователя
+        function setupUserProfile() {
+            const userProfileRef = database.ref('profiles/' + userId);
+            
+            userProfileRef.once('value').then((snapshot) => {
+                if (!snapshot.exists()) {
+                    // Создаем новый профиль
+                    userProfileRef.set({
+                        name: currentUser,
+                        username: currentUser,
+                        lastOnline: Date.now(),
+                        isOnline: true,
+                        status: userStatus
+                    });
+                } else {
+                    // Обновляем существующий профиль
+                    userProfileRef.update({
+                        name: currentUser,
+                        lastOnline: Date.now(),
+                        isOnline: true,
+                        status: userStatus
+                    });
+                }
+            });
+            
+            // Обновляем статус при выходе
+            userProfileRef.onDisconnect().update({
+                isOnline: false,
+                lastOnline: Date.now(),
+                status: 'offline'
+            });
+        }
+        
+        // Загрузка списка чатов
+        function loadChatsList() {
+            chatsList.innerHTML = `
+                <div class="empty-chat">
+                    <div class="loading-dots">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                    <p>Загрузка чатов...</p>
+                </div>
+            `;
+            
+            // Удаляем предыдущий слушатель, если он есть
+            if (chatsListener) {
+                database.ref('chats').off('value', chatsListener);
+            }
+            
+            // Слушаем изменения в чатах
+            chatsListener = database.ref('chats').orderByChild('lastMessageTime').on('value', (snapshot) => {
+                chatsList.innerHTML = '';
+                
+                if (!snapshot.exists()) {
+                    chatsList.innerHTML = '<div class="empty-chat"><i class="fas fa-comments"></i><p>У вас пока нет чатов</p></div>';
+                    return;
+                }
+                
+                const chats = snapshot.val();
+                let hasChats = false;
+                const userChats = [];
+                
+                // Собираем все чаты пользователя
+                Object.keys(chats).forEach(chatId => {
+                    const chat = chats[chatId];
+                    
+                    // Проверяем, относится ли чат к текущему пользователю
+                    if (chat.participants && chat.participants[userId]) {
+                        hasChats = true;
+                        userChats.push({
+                            id: chatId,
+                            ...chat
+                        });
+                    }
+                });
+                
+                // Сортируем чаты по времени последнего сообщения
+                userChats.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                
+                // Отображаем чаты
+                userChats.forEach(chatData => {
+                    addChatToList(chatData);
+                });
+                
+                if (!hasChats) {
+                    chatsList.innerHTML = '<div class="empty-chat"><i class="fas fa-comments"></i><p>У вас пока нет чатов</p></div>';
+                }
+            });
+        }
+        
+        // Добавление чата в список
+        function addChatToList(chatData) {
+            const chatItem = document.createElement('div');
+            chatItem.classList.add('chat-item');
+            if (unreadMessages[chatData.id] > 0) {
+                chatItem.classList.add('unread');
+            }
+            chatItem.dataset.chatId = chatData.id;
+            
+            // Находим собеседника
+            let otherUserId = null;
+            let otherUserName = '';
+            Object.keys(chatData.participants).forEach(participantId => {
+                if (participantId !== userId) {
+                    otherUserId = participantId;
+                    otherUserName = chatData.participants[participantId].name;
+                }
+            });
+            
+            if (!otherUserId) return;
+            
+            const lastMessage = chatData.lastMessage || 'Нет сообщений';
+            const lastMessageTime = chatData.lastMessageTime ? new Date(chatData.lastMessageTime) : new Date();
+            const timeString = formatTime(lastMessageTime);
+            const unreadCount = unreadMessages[chatData.id] || 0;
+            
+            chatItem.innerHTML = `
+                <div class="chat-item-avatar" style="background: ${generateUserColor()}">
+                    ${otherUserName ? otherUserName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div class="chat-item-info">
+                    <div class="chat-item-header">
+                        <div class="chat-item-name">${otherUserName}</div>
+                        <div class="chat-item-time">${timeString}</div>
+                    </div>
+                    <div class="chat-item-last-message">${lastMessage}</div>
+                </div>
+                ${unreadCount > 0 ? `<div class="chat-item-unread">${unreadCount}</div>` : ''}
+            `;
+            
+            chatItem.addEventListener('click', () => {
+                openChat(otherUserId, otherUserName, chatData.id);
+            });
+            
+            chatsList.appendChild(chatItem);
+        }
+        
+        // Выполнение поиска
+        function performSearch() {
+            const username = searchInput.value.trim();
+            
+            if (username) {
+                usersList.innerHTML = `
+                    <div class="empty-chat">
+                        <div class="loading-dots">
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                        </div>
+                        <p>Поиск пользователей...</p>
+                    </div>
+                `;
+                
+                // Ищем пользователей по юзернейму
+                database.ref('profiles').once('value').then((snapshot) => {
+                    usersList.innerHTML = '';
+                    
+                    if (!snapshot.exists()) {
+                        usersList.innerHTML = '<div class="empty-chat"><i class="fas fa-users"></i><p>Пользователи не найдены</p></div>';
+                        return;
+                    }
+                    
+                    const users = snapshot.val();
+                    let foundUsers = false;
+                    
+                    Object.keys(users).forEach(userKey => {
+                        const user = users[userKey];
+                        
+                        // Пропускаем текущего пользователя
+                        if (userKey === userId) return;
+                        
+                        // Проверяем совпадение по юзернейму или имени
+                        const searchTerm = username.toLowerCase();
+                        const userUsername = (user.username || '').toLowerCase();
+                        const userName = (user.name || '').toLowerCase();
+                        
+                        if (userUsername.includes(searchTerm) || userName.includes(searchTerm)) {
+                            foundUsers = true;
+                            addUserToList(userKey, user);
+                        }
+                    });
+                    
+                    if (!foundUsers) {
+                        usersList.innerHTML = '<div class="empty-chat"><i class="fas fa-users"></i><p>Пользователи не найдены</p></div>';
+                    }
+                }).catch((error) => {
+                    console.error("Ошибка поиска:", error);
+                    usersList.innerHTML = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><p>Ошибка поиска</p></div>';
+                });
+            } else {
+                showNotification("Введите юзернейм для поиска");
+            }
+        }
+        
+        // Добавление пользователя в список
+        function addUserToList(userId, user) {
+            const userItem = document.createElement('div');
+            userItem.classList.add('user-item');
+            userItem.dataset.userId = userId;
+            
+            const displayName = user.username || user.name;
+            const statusClass = user.isOnline ? 'online' : 'offline';
+            const statusText = user.isOnline ? 'Онлайн' : 'Оффлайн';
+            
+            userItem.innerHTML = `
+                <div class="user-item-avatar" style="background: ${generateUserColor()}">
+                    ${displayName ? displayName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div class="user-item-info">
+                    <div class="user-item-name">${displayName}</div>
+                    <div class="user-item-status ${statusClass}">${statusText}</div>
+                </div>
+            `;
+            
+            userItem.addEventListener('click', () => {
+                openChat(userId, displayName);
+            });
+            
+            usersList.appendChild(userItem);
+        }
+        
+        // Открытие чата с пользователем
+        function openChat(userId, userName, chatId = null) {
+            currentChatWith = userId;
+            currentChatWithName = userName;
+            
+            // Обновляем интерфейс
+            chatUserName.textContent = userName;
+            chatAvatarInitial.textContent = userName.charAt(0).toUpperCase();
+            chatUserAvatar.style.background = generateUserColor();
+            
+            // Загружаем статус пользователя
+            database.ref('profiles/' + userId).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const user = snapshot.val();
+                    const statusText = user.isOnline ? 
+                        (user.status === 'online' ? 'Онлайн' : 
+                         user.status === 'away' ? 'Отошёл' : 
+                         user.status === 'busy' ? 'Занят' : 'Не в сети') : 'Не в сети';
+                    chatUserStatus.textContent = statusText;
+                }
+            });
+            
+            // Переключаем видимость
+            chatWrapper.style.display = 'none';
+            chatWindow.style.display = 'flex';
+            
+            // Создаем или получаем ID чата
+            if (!chatId) {
+                chatId = generateChatId(userId);
+                createChat(chatId, userId, userName);
+            }
+            currentChatId = chatId;
+            
+            // Загружаем сообщения
+            loadMessages(chatId);
+            
+            // Помечаем сообщения как прочитанные
+            markMessagesAsRead(chatId);
+            
+            // Фокусируемся на поле ввода
+            setTimeout(() => {
+                messageInput.focus();
+            }, 100);
+        }
+        
+        // Генерация ID чата
+        function generateChatId(otherUserId) {
+            const ids = [userId, otherUserId].sort();
+            return `chat_${ids[0]}_${ids[1]}`;
+        }
+        
+        // Создание чата
+        function createChat(chatId, otherUserId, otherUserName) {
+            const chatData = {
+                id: chatId,
+                participants: {
+                    [userId]: {
+                        id: userId,
+                        name: currentUser,
+                        joinedAt: Date.now()
+                    },
+                    [otherUserId]: {
+                        id: otherUserId,
+                        name: otherUserName,
+                        joinedAt: Date.now()
+                    }
+                },
+                createdAt: Date.now(),
+                lastMessage: "Чат создан",
+                lastMessageTime: Date.now()
+            };
+            
+            // Сохраняем чат в базе данных
+            database.ref('chats/' + chatId).set(chatData);
+        }
+        
+        // Возврат к чатам
+        function backToChats() {
+            chatWindow.style.display = 'none';
+            chatWrapper.style.display = 'flex';
+            
+            // Удаляем слушатель сообщений
+            if (messagesListener) {
+                database.ref('messages').off('value', messagesListener);
+                messagesListener = null;
+            }
+            
+            currentChatWith = null;
+            currentChatWithName = '';
+            currentChatId = '';
+            
+            // Очищаем сообщения
+            messagesContainer.innerHTML = '<div class="empty-chat"><i class="fas fa-comments"></i><p>Начните общение с этим пользователем</p></div>';
+            messageInput.value = '';
+            sendBtn.disabled = true;
+        }
+        
+        // Загрузка сообщений
+        function loadMessages(chatId) {
+            messagesContainer.innerHTML = '<div class="empty-chat"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><p>Загрузка сообщений...</p></div>';
+            
+            if (!currentChatWith) return;
+            
+            // Удаляем предыдущий слушатель, если он есть
+            if (messagesListener) {
+                database.ref('messages').off('value', messagesListener);
+            }
+            
+            // Получаем сообщения из базы данных
+            messagesListener = database.ref('messages').orderByChild('timestamp').on('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    messagesContainer.innerHTML = '<div class="empty-chat"><i class="fas fa-comments"></i><p>Начните общение с этим пользователем</p></div>';
+                    return;
+                }
+                
+                const messages = snapshot.val();
+                messagesContainer.innerHTML = '';
+                let hasMessages = false;
+                
+                Object.keys(messages).forEach(messageId => {
+                    const message = messages[messageId];
+                    
+                    // Показываем только сообщения между текущим пользователем и выбранным собеседником
+                    if ((message.senderId === userId && message.receiverId === currentChatWith) ||
+                        (message.senderId === currentChatWith && message.receiverId === userId)) {
+                        hasMessages = true;
+                        addMessageToChat(message);
+                    }
+                });
+                
+                if (!hasMessages) {
+                    messagesContainer.innerHTML = '<div class="empty-chat"><i class="fas fa-comments"></i><p>Начните общение с этим пользователем</p></div>';
+                } else {
+                    // Прокручиваем вниз
+                    scrollToBottom();
+                }
+            });
+        }
+        
+        // Добавление сообщения в чат
+        function addMessageToChat(message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            
+            if (message.senderId === userId) {
+                messageElement.classList.add('my-message');
+            } else {
+                messageElement.classList.add('other-message');
+            }
+            
+            const date = new Date(message.timestamp);
+            const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageElement.innerHTML = `
+                ${message.senderId !== userId ? `<div class="sender">${message.senderName}</div>` : ''}
+                <div>${message.text}</div>
+                <div class="timestamp">${timeString}</div>
+            `;
+            
+            messagesContainer.appendChild(messageElement);
+        }
+        
+        // Отправка сообщения
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            
+            if (text && currentChatWith) {
+                const messageId = database.ref('messages').push().key;
+                const timestamp = Date.now();
+                const chatId = currentChatId || generateChatId(currentChatWith);
+                
+                const messageData = {
+                    id: messageId,
+                    text: text,
+                    senderId: userId,
+                    senderName: currentUser,
+                    receiverId: currentChatWith,
+                    receiverName: currentChatWithName,
+                    timestamp: timestamp,
+                    chatId: chatId,
+                    read: false
+                };
+                
+                // Сохраняем сообщение в базе данных
+                database.ref('messages/' + messageId).set(messageData)
+                    .then(() => {
+                        // Обновляем информацию о чате
+                        updateChatInfo(chatId, text, timestamp);
+                        
+                        // Очищаем поле ввода
+                        messageInput.value = '';
+                        sendBtn.disabled = true;
+                        
+                        // Прокручиваем вниз
+                        scrollToBottom();
+                    })
+                    .catch((error) => {
+                        console.error("Ошибка отправки сообщения:", error);
+                        showNotification("Ошибка отправки сообщения");
+                    });
+            }
+        }
+        
+        // Обновление информации о чате
+        function updateChatInfo(chatId, lastMessage, timestamp) {
+            const chatUpdate = {
+                lastMessage: lastMessage,
+                lastMessageTime: timestamp
+            };
+            
+            database.ref('chats/' + chatId).update(chatUpdate);
+        }
+        
+        // Пометка сообщений как прочитанных
+        function markMessagesAsRead(chatId) {
+            database.ref('messages').orderByChild('chatId').equalTo(chatId).once('value').then((snapshot) => {
+                if (!snapshot.exists()) return;
+                
+                const updates = {};
+                snapshot.forEach((childSnapshot) => {
+                    const message = childSnapshot.val();
+                    if (message.receiverId === userId && !message.read) {
+                        updates[`${childSnapshot.key}/read`] = true;
+                    }
+                });
+                
+                if (Object.keys(updates).length > 0) {
+                    database.ref('messages').update(updates);
+                    
+                    // Обновляем счетчик непрочитанных
+                    delete unreadMessages[chatId];
+                    updateUnreadBadges();
+                }
+            });
+        }
+        
+        // Загрузка непрочитанных сообщений
+        function loadUnreadMessages() {
+            database.ref('messages').orderByChild('receiverId').equalTo(userId).on('value', (snapshot) => {
+                if (!snapshot.exists()) return;
+                
+                const messages = snapshot.val();
+                unreadMessages = {};
+                
+                Object.keys(messages).forEach(messageId => {
+                    const message = messages[messageId];
+                    if (!message.read && message.chatId) {
+                        unreadMessages[message.chatId] = (unreadMessages[message.chatId] || 0) + 1;
+                    }
+                });
+                
+                updateUnreadBadges();
+            });
+        }
+        
+        // Обновление бейджей непрочитанных
+        function updateUnreadBadges() {
+            // Здесь можно добавить обновление бейджей в UI
+            console.log("Непрочитанные сообщения:", unreadMessages);
+        }
+        
+        // Прокрутка вниз
+        function scrollToBottom() {
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+        }
+        
+        // Форматирование времени
+        function formatTime(date) {
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) { // Меньше минуты
+                return 'только что';
+            } else if (diff < 3600000) { // Меньше часа
+                return Math.floor(diff / 60000) + ' мин';
+            } else if (diff < 86400000) { // Меньше суток
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } else {
+                return date.toLocaleDateString();
+            }
+        }
+        
+        // Показ профиля
+        function showProfile() {
+            profileName.textContent = currentUser;
+            profileAvatarInitial.textContent = currentUser.charAt(0).toUpperCase();
+            profileAvatar.style.background = userColor;
+            profileId.textContent = userId;
+            profileStatus.textContent = userStatus === 'online' ? 'Онлайн' : 
+                                      userStatus === 'away' ? 'Отошёл' : 
+                                      userStatus === 'busy' ? 'Занят' : 'Не в сети';
+            
+            // Загружаем текущий юзернейм
+            database.ref('profiles/' + userId).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const profile = snapshot.val();
+                    usernameInput.value = profile.username || currentUser;
+                }
+            });
+            
+            profileModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Сохранение профиля
+        function saveProfile() {
+            const newUsername = usernameInput.value.trim();
+            
+            if (newUsername) {
+                // Обновляем профиль в базе данных
+                database.ref('profiles/' + userId).update({
+                    username: newUsername
+                }).then(() => {
+                    showNotification("Профиль обновлен");
+                    profileModal.classList.remove('active');
+                }).catch((error) => {
+                    console.error("Ошибка обновления профиля:", error);
+                    showNotification("Ошибка обновления профиля");
+                });
+            } else {
+                showNotification("Введите корректный юзернейм");
+            }
+        }
+        
+        // Показ модального окна темы
+        function showThemeModal() {
+            themeModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Смена темы
+        function changeTheme(theme) {
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+            
+            localStorage.setItem('quantumTheme', theme);
+            themeModal.classList.remove('active');
+            showNotification("Тема изменена");
+        }
+        
+        // Показ модального окна статуса
+        function showStatusModal() {
+            statusModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Смена статуса
+        function changeStatus(status) {
+            userStatus = status;
+            localStorage.setItem('quantumStatus', status);
+            
+            // Обновляем статус в базе данных
+            if (userId) {
+                database.ref('profiles/' + userId).update({
+                    status: status
+                });
+            }
+            
+            statusModal.classList.remove('active');
+            
+            const statusText = status === 'online' ? 'Онлайн' : 
+                             status === 'away' ? 'Отошёл' : 
+                             status === 'busy' ? 'Занят' : 'Не в сети';
+            showNotification(`Статус изменен на: ${statusText}`);
+        }
+        
+        // Показ настроек уведомлений
+        function showNotificationsModal() {
+            // Устанавливаем текущие значения переключателей
+            document.getElementById('notificationsToggle').checked = userSettings.notifications;
+            document.getElementById('soundToggle').checked = userSettings.sound;
+            document.getElementById('vibrationToggle').checked = userSettings.vibration;
+            
+            notificationsModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Показ настроек приватности
+        function showPrivacyModal() {
+            // Устанавливаем текущие значения
+            document.querySelectorAll('.privacy-option').forEach(opt => {
+                opt.classList.remove('active');
+                if (opt.getAttribute('data-privacy') === userSettings.privacy) {
+                    opt.classList.add('active');
+                }
+            });
+            document.getElementById('onlineStatusToggle').checked = userSettings.onlineStatus;
+            document.getElementById('lastSeenToggle').checked = userSettings.lastSeen;
+            
+            privacyModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Показ настроек хранилища
+        function showStorageModal() {
+            // Рассчитываем использованное место
+            const usedStorage = Math.floor(Math.random() * 50) + 10; // Имитация данных
+            document.getElementById('storageUsed').textContent = usedStorage + ' MB';
+            
+            // Устанавливаем текущие значения
+            document.getElementById('autoCleanupToggle').checked = userSettings.autoCleanup;
+            document.getElementById('compressImagesToggle').checked = userSettings.compressImages;
+            
+            storageModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Очистка хранилища
+        function clearStorage() {
+            if (confirm("Вы уверены, что хотите очистить кэш? Это освободит место на устройстве.")) {
+                // Имитация очистки кэша
+                showNotification("Кэш успешно очищен");
+                document.getElementById('storageUsed').textContent = '0 MB';
+                storageModal.classList.remove('active');
+            }
+        }
+        
+        // Показ настроек резервной копии
+        function showBackupModal() {
+            // Устанавливаем информацию о последней копии
+            const lastBackup = localStorage.getItem('lastBackup');
+            document.getElementById('lastBackupDate').textContent = lastBackup ? new Date(parseInt(lastBackup)).toLocaleDateString() : 'Никогда';
+            document.getElementById('backupSize').textContent = Math.floor(Math.random() * 10) + 1 + ' MB';
+            
+            backupModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Создание резервной копии
+        function createBackup() {
+            // Имитация создания резервной копии
+            localStorage.setItem('lastBackup', Date.now().toString());
+            showNotification("Резервная копия создана успешно");
+            backupModal.classList.remove('active');
+        }
+        
+        // Показ настроек безопасности
+        function showSecurityModal() {
+            // Устанавливаем текущие значения
+            document.getElementById('twoFactorToggle').checked = userSettings.twoFactor;
+            document.getElementById('loginAlertsToggle').checked = userSettings.loginAlerts;
+            document.getElementById('encryptionToggle').checked = userSettings.encryption;
+            document.getElementById('selfDestructToggle').checked = userSettings.selfDestruct;
+            
+            securityModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Показ настроек языка
+        function showLanguageModal() {
+            languageModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Показ информации о программе
+        function showAboutModal() {
+            aboutModal.classList.add('active');
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Очистка всех чатов
+        function clearAllChats() {
+            if (confirm("Вы уверены, что хотите очистить все чаты? Это действие нельзя отменить.")) {
+                // Здесь должна быть логика очистки чатов
+                showNotification("Все чаты очищены");
+                burgerMenuContent.classList.remove('active');
+            }
+        }
+        
+        // Экспорт данных пользователя
+        function exportUserData() {
+            // Имитация экспорта данных
+            showNotification("Данные успешно экспортированы");
+            burgerMenuContent.classList.remove('active');
+        }
+        
+        // Показ информации о чате
+        function showChatInfo() {
+            if (!currentChatWith) return;
+            
+            chatInfoName.textContent = currentChatWithName;
+            chatInfoAvatar.textContent = currentChatWithName.charAt(0).toUpperCase();
+            
+            // Загружаем информацию о пользователе
+            database.ref('profiles/' + currentChatWith).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const user = snapshot.val();
+                    const statusText = user.isOnline ? 
+                        (user.status === 'online' ? 'Онлайн' : 
+                         user.status === 'away' ? 'Отошёл' : 
+                         user.status === 'busy' ? 'Занят' : 'Не в сети') : 'Не в сети';
+                    chatInfoStatus.textContent = statusText;
+                }
+            });
+            
+            // Загружаем информацию о чате
+            if (currentChatId) {
+                database.ref('chats/' + currentChatId).once('value').then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const chat = snapshot.val();
+                        chatCreatedDate.textContent = new Date(chat.createdAt).toLocaleDateString();
+                        chatLastActivity.textContent = new Date(chat.lastMessageTime).toLocaleString();
+                        
+                        // Подсчитываем количество сообщений
+                        database.ref('messages').orderByChild('chatId').equalTo(currentChatId).once('value').then((msgSnapshot) => {
+                            const messagesCount = msgSnapshot.exists() ? Object.keys(msgSnapshot.val()).length : 0;
+                            chatMessagesCount.textContent = messagesCount;
+                        });
+                    }
+                });
+            }
+            
+            chatInfoModal.classList.add('active');
+            chatMenuContent.classList.remove('active');
+        }
+        
+        // Очистка истории чата
+        function clearChatHistory() {
+            if (confirm("Вы уверены, что хотите очистить историю этого чата? Это действие нельзя отменить.")) {
+                if (currentChatId) {
+                    // Удаляем все сообщения этого чата
+                    database.ref('messages').orderByChild('chatId').equalTo(currentChatId).once('value').then((snapshot) => {
+                        const updates = {};
+                        if (snapshot.exists()) {
+                            snapshot.forEach((childSnapshot) => {
+                                updates[childSnapshot.key] = null;
+                            });
+                            database.ref('messages').update(updates);
+                        }
+                    });
+                    
+                    // Обновляем информацию о чате
+                    database.ref('chats/' + currentChatId).update({
+                        lastMessage: "История очищена",
+                        lastMessageTime: Date.now()
+                    });
+                    
+                    showNotification("История чата очищена");
+                    messagesContainer.innerHTML = '<div class="empty-chat"><i class="fas fa-comments"></i><p>История чата очищена</p></div>';
+                }
+                chatMenuContent.classList.remove('active');
+            }
+        }
+        
+        // Блокировка пользователя
+        function blockUser() {
+            if (confirm(`Вы уверены, что хотите заблокировать пользователя ${currentChatWithName}?`)) {
+                // Здесь должна быть логика блокировки пользователя
+                showNotification(`Пользователь ${currentChatWithName} заблокирован`);
+                backToChats();
+                chatMenuContent.classList.remove('active');
+            }
+        }
+        
+        // Показ уведомления
+        function showNotification(message) {
+            // Создаем элемент уведомления
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            
+            // Добавляем уведомление в тело документа
+            document.body.appendChild(notification);
+            
+            // Удаляем уведомление через 3 секунды
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+        
+        // Удаление всех слушателей
+        function removeAllListeners() {
+            if (messagesListener) {
+                database.ref('messages').off('value', messagesListener);
+                messagesListener = null;
+            }
+            
+            if (chatsListener) {
+                database.ref('chats').off('value', chatsListener);
+                chatsListener = null;
+            }
+        }
+    </script>
+<script src="groups.js"></script>
+<script src="file-sharing.js"></script>
+<!-- После основных скриптов вашего мессенджера -->
+<script src="quantum-plus.js"></script>
+<script src="file-sharing-enhanced.js"></script>
+</body>
+  </html>
