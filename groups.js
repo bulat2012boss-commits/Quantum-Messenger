@@ -360,6 +360,9 @@ function showInviteLinkModal(groupName, inviteLink, groupId) {
                 <button class="modal-btn" id="shareInChatBtn" style="width: 100%; margin-bottom: 10px; background: linear-gradient(to right, #4facfe, #00f2fe); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">
                     <i class="fas fa-paper-plane"></i> Отправить в личные сообщения
                 </button>
+                <button class="modal-btn" id="shareInGroupBtn" style="width: 100%; margin-bottom: 10px; background: linear-gradient(to right, #ff7e5f, #feb47b); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-share-alt"></i> Поделиться в других группах
+                </button>
             </div>
             <div class="modal-buttons">
                 <button class="modal-btn primary" id="openGroupBtn">
@@ -382,6 +385,11 @@ function showInviteLinkModal(groupName, inviteLink, groupId) {
     
     document.getElementById('shareInChatBtn').addEventListener('click', () => {
         shareGroupInChat(inviteLink, groupName);
+        document.body.removeChild(modal);
+    });
+    
+    document.getElementById('shareInGroupBtn').addEventListener('click', () => {
+        shareGroupInOtherGroups(inviteLink, groupName);
         document.body.removeChild(modal);
     });
     
@@ -440,6 +448,145 @@ function shareGroupInChat(inviteLink, groupName) {
             document.body.removeChild(modal);
         }
     });
+}
+
+// Поделиться ссылкой в других группах
+function shareGroupInOtherGroups(inviteLink, groupName) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'shareInGroupsModal';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px; text-align: center;">Поделиться в группах</h3>
+            <p style="text-align: center; margin-bottom: 15px;">Выберите группу для отправки приглашения в группу "${groupName}"</p>
+            <div id="groupsForSharing" style="max-height: 300px; overflow-y: auto;">
+                <div class="loading-dots">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" id="cancelShareGroupsBtn">Отмена</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Загружаем список групп
+    loadGroupsForSharing(inviteLink, groupName);
+    
+    document.getElementById('cancelShareGroupsBtn').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    });
+}
+
+// Загрузка групп для отправки приглашения
+function loadGroupsForSharing(inviteLink, groupName) {
+    const groupsContainer = document.getElementById('groupsForSharing');
+    
+    database.ref('groups').once('value').then((snapshot) => {
+        groupsContainer.innerHTML = '';
+        
+        if (!snapshot.exists()) {
+            groupsContainer.innerHTML = '<div class="empty-chat"><p>Нет групп для отправки</p></div>';
+            return;
+        }
+        
+        const groups = snapshot.val();
+        let userGroups = [];
+        
+        // Собираем все группы пользователя (кроме текущей создаваемой)
+        Object.keys(groups).forEach(groupId => {
+            const group = groups[groupId];
+            
+            if (group.members && group.members[userId]) {
+                userGroups.push({
+                    id: groupId,
+                    name: group.name,
+                    ...group
+                });
+            }
+        });
+        
+        // Отображаем группы
+        if (userGroups.length === 0) {
+            groupsContainer.innerHTML = '<div class="empty-chat"><p>Нет групп для отправки</p></div>';
+        } else {
+            userGroups.forEach(group => {
+                const groupItem = document.createElement('div');
+                groupItem.className = 'user-item';
+                groupItem.innerHTML = `
+                    <div class="user-item-avatar" style="background: ${group.avatar ? 'transparent' : 'linear-gradient(to right, #ff7e5f, #feb47b)'}; overflow: hidden;">
+                        ${group.avatar ? 
+                            `<img src="${group.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                            `<i class="fas fa-users" style="color: white;"></i>`
+                        }
+                    </div>
+                    <div class="user-item-info">
+                        <div class="user-item-name">${group.name}</div>
+                        <div class="user-item-status">${Object.keys(group.members || {}).length} участников</div>
+                    </div>
+                    <button class="send-invite-btn" data-group-id="${group.id}" data-group-name="${group.name}" style="padding: 5px 10px; background: linear-gradient(to right, #4facfe, #00f2fe); color: white; border: none; border-radius: 15px; cursor: pointer; font-size: 12px;">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                `;
+                
+                groupItem.querySelector('.send-invite-btn').addEventListener('click', () => {
+                    sendGroupInviteToGroup(group.id, group.name, inviteLink, groupName);
+                    document.body.removeChild(document.getElementById('shareInGroupsModal'));
+                });
+                
+                groupsContainer.appendChild(groupItem);
+            });
+        }
+    });
+}
+
+// Отправка приглашения в другую группу
+function sendGroupInviteToGroup(targetGroupId, targetGroupName, inviteLink, groupName) {
+    const messageId = database.ref('groupMessages').push().key;
+    const timestamp = Date.now();
+    
+    const messageData = {
+        id: messageId,
+        text: `Присоединяйтесь к новой группе "${groupName}"`,
+        senderId: userId,
+        senderName: currentUser,
+        groupId: targetGroupId,
+        groupName: targetGroupName,
+        timestamp: timestamp,
+        isGroupInvite: true,
+        groupLink: inviteLink,
+        inviteGroupName: groupName,
+        inviteData: {
+            groupLink: inviteLink,
+            groupName: groupName,
+            timestamp: timestamp
+        }
+    };
+    
+    database.ref('groupMessages/' + messageId).set(messageData)
+        .then(() => {
+            showNotification(`Приглашение отправлено в группу "${targetGroupName}"`);
+            
+            // Обновляем активность группы
+            database.ref('groups/' + targetGroupId).update({
+                lastActivity: timestamp
+            });
+        })
+        .catch((error) => {
+            console.error("Ошибка отправки приглашения:", error);
+            showNotification("Ошибка отправки приглашения");
+        });
 }
 
 // Загрузка чатов для отправки приглашения
@@ -520,7 +667,7 @@ function sendGroupInviteToUser(otherUserId, otherUserName, inviteLink, groupName
     
     const messageData = {
         id: messageId,
-        text: `Привет! Присоединяйся к моей группе "${groupName}": ${inviteLink}`,
+        text: `Привет! Присоединяйся к моей группе "${groupName}"`,
         senderId: userId,
         senderName: currentUser,
         receiverId: otherUserId,
@@ -528,7 +675,12 @@ function sendGroupInviteToUser(otherUserId, otherUserName, inviteLink, groupName
         timestamp: timestamp,
         isGroupInvite: true,
         groupLink: inviteLink,
-        groupName: groupName
+        groupName: groupName,
+        inviteData: {
+            groupLink: inviteLink,
+            groupName: groupName,
+            timestamp: timestamp
+        }
     };
     
     database.ref('messages/' + messageId).set(messageData)
@@ -663,135 +815,205 @@ function addGroupToList(groupData) {
         openGroupChat(groupData.id, groupData.name);
     });
     
+    // Добавляем обработчик долгого нажатия для мобильных
+    let pressTimer;
+    groupItem.addEventListener('touchstart', (e) => {
+        pressTimer = setTimeout(() => {
+            showGroupContextMenu(groupData, e);
+        }, 500);
+    });
+    
+    groupItem.addEventListener('touchend', () => {
+        clearTimeout(pressTimer);
+    });
+    
+    groupItem.addEventListener('touchmove', () => {
+        clearTimeout(pressTimer);
+    });
+    
     document.getElementById('groupsList').appendChild(groupItem);
 }
 
-// Поиск групп
-function searchGroups() {
-    const searchTerm = document.getElementById('searchGroupInput').value.trim().toLowerCase();
+// Контекстное меню для групп (мобильные)
+function showGroupContextMenu(groupData, event) {
+    event.preventDefault();
     
-    if (!searchTerm) {
-        showNotification("Введите поисковый запрос");
-        return;
-    }
+    const contextMenu = document.createElement('div');
+    contextMenu.className = 'context-menu';
+    contextMenu.style.cssText = `
+        position: fixed;
+        left: ${event.touches[0].clientX}px;
+        top: ${event.touches[0].clientY}px;
+        background: var(--header-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 8px 0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        z-index: 1000;
+        min-width: 150px;
+    `;
     
-    const groupsList = document.getElementById('groupsList');
-    groupsList.innerHTML = `
-        <div class="empty-chat">
-            <div class="loading-dots">
-                <div class="loading-dot"></div>
-                <div class="loading-dot"></div>
-                <div class="loading-dot"></div>
-            </div>
-            <p>Поиск групп...</p>
+    const userRole = groupData.members[userId]?.role || 'member';
+    const isAdmin = userRole === 'admin';
+    
+    contextMenu.innerHTML = `
+        <div class="context-menu-item" data-action="open">
+            <i class="fas fa-comments"></i> Открыть
+        </div>
+        <div class="context-menu-item" data-action="invite">
+            <i class="fas fa-user-plus"></i> Пригласить
+        </div>
+        <div class="context-menu-item" data-action="info">
+            <i class="fas fa-info-circle"></i> Информация
+        </div>
+        ${isAdmin ? `
+        <div class="context-menu-item" data-action="settings">
+            <i class="fas fa-cog"></i> Настройки
+        </div>
+        ` : ''}
+        <div class="context-menu-item" data-action="leave" style="color: #ff6b6b;">
+            <i class="fas fa-sign-out-alt"></i> Покинуть
         </div>
     `;
     
-    database.ref('groups').once('value').then((snapshot) => {
-        groupsList.innerHTML = '';
-        
-        if (!snapshot.exists()) {
-            groupsList.innerHTML = '<div class="empty-chat"><i class="fas fa-users"></i><p>Группы не найдены</p></div>';
-            return;
-        }
-        
-        const groups = snapshot.val();
-        let foundGroups = false;
-        
-        Object.keys(groups).forEach(groupId => {
-            const group = groups[groupId];
-            
-            // Проверяем совпадение по названию или описанию
-            const groupName = (group.name || '').toLowerCase();
-            const groupDescription = (group.description || '').toLowerCase();
-            
-            if (groupName.includes(searchTerm) || groupDescription.includes(searchTerm)) {
-                // Пропускаем группы, в которых пользователь уже состоит
-                if (group.members && group.members[userId]) {
-                    return;
-                }
-                
-                // Пропускаем приватные группы
-                if (!group.settings.public) {
-                    return;
-                }
-                
-                foundGroups = true;
-                addPublicGroupToList(groupId, group);
-            }
+    document.body.appendChild(contextMenu);
+    
+    // Обработчики для пунктов меню
+    contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const action = item.dataset.action;
+            handleGroupContextAction(action, groupData);
+            document.body.removeChild(contextMenu);
         });
         
-        if (!foundGroups) {
-            groupsList.innerHTML = '<div class="empty-chat"><i class="fas fa-users"></i><p>Группы не найдены</p></div>';
-        }
-    }).catch((error) => {
-        console.error("Ошибка поиска групп:", error);
-        groupsList.innerHTML = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><p>Ошибка поиска</p></div>';
+        // Стили для пунктов меню
+        item.style.cssText = `
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        `;
+        
+        item.addEventListener('mouseenter', () => {
+            item.style.background = 'var(--other-msg-bg)';
+        });
+        
+        item.addEventListener('mouseleave', () => {
+            item.style.background = 'transparent';
+        });
     });
+    
+    // Закрытие меню при клике вне его
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu() {
+            if (contextMenu.parentNode) {
+                document.body.removeChild(contextMenu);
+            }
+            document.removeEventListener('click', closeMenu);
+        });
+    }, 100);
 }
 
-// Добавление публичной группы в список
-function addPublicGroupToList(groupId, group) {
-    const groupItem = document.createElement('div');
-    groupItem.classList.add('user-item');
-    groupItem.dataset.groupId = groupId;
-    
-    const membersCount = Object.keys(group.members || {}).length;
-    
-    groupItem.innerHTML = `
-        <div class="user-item-avatar" style="background: ${group.avatar ? 'transparent' : 'linear-gradient(to right, #ff7e5f, #feb47b)'}; overflow: hidden;">
-            ${group.avatar ? 
-                `<img src="${group.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : 
-                `<i class="fas fa-users" style="color: white;"></i>`
+// Обработка действий контекстного меню
+function handleGroupContextAction(action, groupData) {
+    switch (action) {
+        case 'open':
+            openGroupChat(groupData.id, groupData.name);
+            break;
+        case 'invite':
+            showInviteLinkModal(groupData.name, groupData.inviteLink, groupData.id);
+            break;
+        case 'info':
+            showGroupInfoModal(groupData.id, groupData);
+            break;
+        case 'settings':
+            if (currentGroupRole === 'admin') {
+                showGroupSettings();
             }
+            break;
+        case 'leave':
+            leaveGroup();
+            break;
+    }
+}
+
+// Показ информации о группе
+function showGroupInfoModal(groupId, group) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'groupInfoModal';
+    
+    const members = group.members || {};
+    const membersCount = Object.keys(members).length;
+    const createdDate = new Date(group.createdAt).toLocaleDateString();
+    
+    let membersList = '';
+    Object.keys(members).forEach(memberId => {
+        const member = members[memberId];
+        membersList += `
+            <div class="user-item">
+                <div class="user-item-avatar" style="background: ${generateUserColor()}">
+                    ${member.name ? member.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div class="user-item-info">
+                    <div class="user-item-name">${member.name} ${member.role === 'admin' ? '👑' : ''}</div>
+                    <div class="user-item-status ${member.isOnline ? 'online' : 'offline'}">${member.role === 'admin' ? 'Администратор' : 'Участник'} • ${member.isOnline ? 'Онлайн' : 'Оффлайн'}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px; text-align: center;">Информация о группе</h3>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="group-avatar-preview" style="width: 80px; height: 80px; border-radius: 50%; background: ${group.avatar ? 'transparent' : 'linear-gradient(to right, #ff7e5f, #feb47b)'}; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin: 0 auto 10px; overflow: hidden;">
+                    ${group.avatar ? 
+                        `<img src="${group.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                        `<i class="fas fa-users"></i>`
+                    }
+                </div>
+                <h4 style="margin-bottom: 5px;">${group.name}</h4>
+                <p style="font-size: 14px; color: var(--text-color); opacity: 0.8; margin-bottom: 10px;">${group.description || 'Описание отсутствует'}</p>
+                <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; font-weight: bold;">${membersCount}</div>
+                        <div style="font-size: 12px;">участников</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; font-weight: bold;">${group.settings?.public ? 'Публичная' : 'Закрытая'}</div>
+                        <div style="font-size: 12px;">группа</div>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-color); opacity: 0.7;">Создана ${createdDate}</div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin-bottom: 10px;">Участники (${membersCount})</h4>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    ${membersList}
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" id="closeGroupInfoBtn">Закрыть</button>
+            </div>
         </div>
-        <div class="user-item-info">
-            <div class="user-item-name">${group.name}</div>
-            <div class="user-item-status">${membersCount} участников • ${group.settings.public ? 'Открытая' : 'Закрытая'}</div>
-        </div>
-        <button class="join-group-btn" style="padding: 5px 10px; background: linear-gradient(to right, #4facfe, #00f2fe); color: white; border: none; border-radius: 15px; cursor: pointer; font-size: 12px;">Вступить</button>
     `;
     
-    groupItem.querySelector('.join-group-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        joinGroup(groupId, group.name);
+    document.body.appendChild(modal);
+    
+    document.getElementById('closeGroupInfoBtn').addEventListener('click', () => {
+        document.body.removeChild(modal);
     });
     
-    groupItem.addEventListener('click', () => {
-        showGroupInfoModal(groupId, group);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
     });
-    
-    document.getElementById('groupsList').appendChild(groupItem);
-}
-
-// Вступление в группу
-function joinGroup(groupId, groupName) {
-    if (confirm(`Вы хотите вступить в группу "${groupName}"?`)) {
-        const memberData = {
-            id: userId,
-            name: currentUser,
-            role: 'member',
-            joinedAt: Date.now(),
-            isOnline: true
-        };
-        
-        database.ref(`groups/${groupId}/members/${userId}`).set(memberData)
-            .then(() => {
-                showNotification(`Вы вступили в группу "${groupName}"`);
-                
-                // Обновляем активность группы
-                database.ref(`groups/${groupId}`).update({
-                    lastActivity: Date.now()
-                });
-                
-                // Открываем групповой чат
-                openGroupChat(groupId, groupName);
-            })
-            .catch((error) => {
-                console.error("Ошибка вступления в группу:", error);
-                showNotification("Ошибка вступления в группу");
-            });
-    }
 }
 
 // Открытие группового чата
@@ -1167,65 +1389,174 @@ function addGroupMessageToChat(message) {
     const date = new Date(message.timestamp);
     const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    // Формируем HTML для реакций
-    let reactionsHTML = '';
-    if (message.reactions && Object.keys(message.reactions).length > 0) {
-        const reactionCounts = {};
-        Object.values(message.reactions).forEach(reaction => {
-            reactionCounts[reaction] = (reactionCounts[reaction] || 0) + 1;
+    // Обработка сообщений-приглашений в группы
+    if (message.isGroupInvite) {
+        messageElement.innerHTML = `
+            <div class="group-invite-message">
+                <div class="group-invite-header">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Приглашение в группу</span>
+                </div>
+                <div class="group-invite-content">
+                    <div class="group-invite-name">${message.inviteGroupName || message.groupName}</div>
+                    <div class="group-invite-sender">От: ${message.senderName}</div>
+                    <button class="group-invite-btn" data-group-link="${message.groupLink}">
+                        <i class="fas fa-users"></i> Присоединиться к группе
+                    </button>
+                </div>
+                <div class="message-time">${timeString}</div>
+            </div>
+        `;
+        
+        // Обработчик для кнопки присоединения
+        messageElement.querySelector('.group-invite-btn').addEventListener('click', () => {
+            handleGroupInviteLink(message.groupLink);
         });
         
-        reactionsHTML = `<div class="message-reactions" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 2px;">`;
-        Object.keys(reactionCounts).forEach(reaction => {
-            const count = reactionCounts[reaction];
-            const hasUserReacted = message.reactions[userId] === reaction;
-            reactionsHTML += `<span class="reaction-badge ${hasUserReacted ? 'user-reacted' : ''}" data-reaction="${reaction}" data-message-id="${message.id}" style="background: ${hasUserReacted ? '#4facfe' : 'var(--other-msg-bg)'}; padding: 2px 6px; border-radius: 10px; font-size: 12px; cursor: pointer;">${reaction} ${count}</span>`;
+    } else {
+        // Обычное сообщение
+        // Формируем HTML для реакций
+        let reactionsHTML = '';
+        if (message.reactions && Object.keys(message.reactions).length > 0) {
+            const reactionCounts = {};
+            Object.values(message.reactions).forEach(reaction => {
+                reactionCounts[reaction] = (reactionCounts[reaction] || 0) + 1;
+            });
+            
+            reactionsHTML = `<div class="message-reactions" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 2px;">`;
+            Object.keys(reactionCounts).forEach(reaction => {
+                const count = reactionCounts[reaction];
+                const hasUserReacted = message.reactions[userId] === reaction;
+                reactionsHTML += `<span class="reaction-badge ${hasUserReacted ? 'user-reacted' : ''}" data-reaction="${reaction}" data-message-id="${message.id}" style="background: ${hasUserReacted ? '#4facfe' : 'var(--other-msg-bg)'}; padding: 2px 6px; border-radius: 10px; font-size: 12px; cursor: pointer;">${reaction} ${count}</span>`;
+            });
+            reactionsHTML += `</div>`;
+        }
+        
+        messageElement.innerHTML = `
+            ${message.senderId !== userId ? `<div class="sender">${message.senderName}</div>` : ''}
+            <div class="message-content">${message.text}</div>
+            ${reactionsHTML}
+            <div class="timestamp">${timeString}</div>
+            <div class="message-actions" style="position: absolute; top: 5px; right: 5px; display: none;">
+                <button class="react-btn" style="background: none; border: none; color: var(--text-color); cursor: pointer; font-size: 12px; opacity: 0.7;">
+                    <i class="fas fa-smile"></i>
+                </button>
+            </div>
+        `;
+        
+        // Добавляем обработчики для реакций
+        const reactBtn = messageElement.querySelector('.react-btn');
+        const reactionBadges = messageElement.querySelectorAll('.reaction-badge');
+        
+        if (reactBtn) {
+            reactBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showReactionsPopup(message.id, e.clientX, e.clientY);
+            });
+        }
+        
+        reactionBadges.forEach(badge => {
+            badge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleReaction(message.id, badge.dataset.reaction);
+            });
         });
-        reactionsHTML += `</div>`;
+        
+        // Показываем кнопки действий при наведении
+        messageElement.addEventListener('mouseenter', () => {
+            const actions = messageElement.querySelector('.message-actions');
+            if (actions) actions.style.display = 'block';
+        });
+        
+        messageElement.addEventListener('mouseleave', () => {
+            const actions = messageElement.querySelector('.message-actions');
+            if (actions) actions.style.display = 'none';
+        });
     }
-    
-    messageElement.innerHTML = `
-        ${message.senderId !== userId ? `<div class="sender">${message.senderName}</div>` : ''}
-        <div class="message-content">${message.text}</div>
-        ${reactionsHTML}
-        <div class="timestamp">${timeString}</div>
-        <div class="message-actions" style="position: absolute; top: 5px; right: 5px; display: none;">
-            <button class="react-btn" style="background: none; border: none; color: var(--text-color); cursor: pointer; font-size: 12px; opacity: 0.7;">
-                <i class="fas fa-smile"></i>
-            </button>
-        </div>
-    `;
-    
-    // Добавляем обработчики для реакций
-    const reactBtn = messageElement.querySelector('.react-btn');
-    const reactionBadges = messageElement.querySelectorAll('.reaction-badge');
-    
-    if (reactBtn) {
-        reactBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showReactionsPopup(message.id, e.clientX, e.clientY);
-        });
-    }
-    
-    reactionBadges.forEach(badge => {
-        badge.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleReaction(message.id, badge.dataset.reaction);
-        });
-    });
-    
-    // Показываем кнопки действий при наведении
-    messageElement.addEventListener('mouseenter', () => {
-        const actions = messageElement.querySelector('.message-actions');
-        if (actions) actions.style.display = 'block';
-    });
-    
-    messageElement.addEventListener('mouseleave', () => {
-        const actions = messageElement.querySelector('.message-actions');
-        if (actions) actions.style.display = 'none';
-    });
     
     document.getElementById('groupMessagesContainer').appendChild(messageElement);
+}
+
+// Обработка ссылки-приглашения из сообщения
+function handleGroupInviteLink(inviteLink) {
+    // Извлекаем ID группы из ссылки
+    const url = new URL(inviteLink);
+    const groupId = url.searchParams.get('join_group');
+    
+    if (groupId) {
+        // Закрываем групповой чат если открыт
+        backToGroups();
+        
+        // Показываем модальное окно присоединения
+        showJoinGroupDialogFromLink(groupId);
+    }
+}
+
+// Показ диалога вступления в группу из ссылки
+function showJoinGroupDialogFromLink(groupId) {
+    database.ref('groups/' + groupId).once('value').then((snapshot) => {
+        if (!snapshot.exists()) {
+            showNotification("Группа не найдена или была удалена");
+            return;
+        }
+        
+        const group = snapshot.val();
+        
+        // Проверяем, не состоит ли пользователь уже в группе
+        if (group.members && group.members[userId]) {
+            showNotification(`Вы уже состоите в группе "${group.name}"`);
+            openGroupChat(groupId, group.name);
+            return;
+        }
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.id = 'joinGroupDialog';
+        
+        const membersCount = Object.keys(group.members || {}).length;
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3 style="margin-bottom: 15px; text-align: center;">Приглашение в группу</h3>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="user-avatar" style="width: 80px; height: 80px; margin: 0 auto 10px; background: ${group.avatar ? 'transparent' : 'linear-gradient(to right, #ff7e5f, #feb47b)'}; overflow: hidden;">
+                        ${group.avatar ? 
+                            `<img src="${group.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                            `<i class="fas fa-users" style="font-size: 32px; color: white;"></i>`
+                        }
+                    </div>
+                    <div class="profile-name">${group.name}</div>
+                    <div style="font-size: 14px; opacity: 0.7;">${group.description || 'Групповой чат'}</div>
+                    <div style="font-size: 12px; margin-top: 10px; opacity: 0.7;">${membersCount} участников</div>
+                    <div style="font-size: 12px; margin-top: 5px; opacity: 0.7;">Создатель: ${group.creatorName}</div>
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn primary" id="confirmJoinGroupBtn">Вступить в группу</button>
+                    <button class="modal-btn secondary" id="cancelJoinGroupBtn">Отмена</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById('confirmJoinGroupBtn').addEventListener('click', () => {
+            document.body.removeChild(modal);
+            joinGroup(groupId, group.name);
+        });
+        
+        document.getElementById('cancelJoinGroupBtn').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+    }).catch((error) => {
+        console.error("Ошибка загрузки данных группы:", error);
+        showNotification("Ошибка загрузки информации о группе");
+    });
 }
 
 // Показ попапа с реакциями
@@ -1991,7 +2322,7 @@ function showJoinGroupDialog(group, groupId) {
                 <div style="font-size: 12px; margin-top: 5px; opacity: 0.7;">Создатель: ${group.creatorName}</div>
             </div>
             <div class="modal-buttons">
-                <button class="modal-btn primary" id="confirmJoinGroupBtn">Вступить</button>
+                <button class="modal-btn primary" id="confirmJoinGroupBtn">Вступить в группу</button>
                 <button class="modal-btn secondary" id="cancelJoinGroupBtn">Отмена</button>
             </div>
         </div>
@@ -2013,6 +2344,132 @@ function showJoinGroupDialog(group, groupId) {
             document.body.removeChild(modal);
         }
     });
+}
+
+// Вступление в группу
+function joinGroup(groupId, groupName) {
+    const memberData = {
+        id: userId,
+        name: currentUser,
+        role: 'member',
+        joinedAt: Date.now(),
+        isOnline: true
+    };
+    
+    database.ref(`groups/${groupId}/members/${userId}`).set(memberData)
+        .then(() => {
+            showNotification(`Вы вступили в группу "${groupName}"`);
+            
+            // Обновляем активность группы
+            database.ref(`groups/${groupId}`).update({
+                lastActivity: Date.now()
+            });
+            
+            // Открываем групповой чат
+            openGroupChat(groupId, groupName);
+        })
+        .catch((error) => {
+            console.error("Ошибка вступления в группу:", error);
+            showNotification("Ошибка вступления в группу");
+        });
+}
+
+// Поиск групп
+function searchGroups() {
+    const searchTerm = document.getElementById('searchGroupInput').value.trim().toLowerCase();
+    
+    if (!searchTerm) {
+        showNotification("Введите поисковый запрос");
+        return;
+    }
+    
+    const groupsList = document.getElementById('groupsList');
+    groupsList.innerHTML = `
+        <div class="empty-chat">
+            <div class="loading-dots">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            </div>
+            <p>Поиск групп...</p>
+        </div>
+    `;
+    
+    database.ref('groups').once('value').then((snapshot) => {
+        groupsList.innerHTML = '';
+        
+        if (!snapshot.exists()) {
+            groupsList.innerHTML = '<div class="empty-chat"><i class="fas fa-users"></i><p>Группы не найдены</p></div>';
+            return;
+        }
+        
+        const groups = snapshot.val();
+        let foundGroups = false;
+        
+        Object.keys(groups).forEach(groupId => {
+            const group = groups[groupId];
+            
+            // Проверяем совпадение по названию или описанию
+            const groupName = (group.name || '').toLowerCase();
+            const groupDescription = (group.description || '').toLowerCase();
+            
+            if (groupName.includes(searchTerm) || groupDescription.includes(searchTerm)) {
+                // Пропускаем группы, в которых пользователь уже состоит
+                if (group.members && group.members[userId]) {
+                    return;
+                }
+                
+                // Пропускаем приватные группы
+                if (!group.settings.public) {
+                    return;
+                }
+                
+                foundGroups = true;
+                addPublicGroupToList(groupId, group);
+            }
+        });
+        
+        if (!foundGroups) {
+            groupsList.innerHTML = '<div class="empty-chat"><i class="fas fa-users"></i><p>Группы не найдены</p></div>';
+        }
+    }).catch((error) => {
+        console.error("Ошибка поиска групп:", error);
+        groupsList.innerHTML = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><p>Ошибка поиска</p></div>';
+    });
+}
+
+// Добавление публичной группы в список
+function addPublicGroupToList(groupId, group) {
+    const groupItem = document.createElement('div');
+    groupItem.classList.add('user-item');
+    groupItem.dataset.groupId = groupId;
+    
+    const membersCount = Object.keys(group.members || {}).length;
+    
+    groupItem.innerHTML = `
+        <div class="user-item-avatar" style="background: ${group.avatar ? 'transparent' : 'linear-gradient(to right, #ff7e5f, #feb47b)'}; overflow: hidden;">
+            ${group.avatar ? 
+                `<img src="${group.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                `<i class="fas fa-users" style="color: white;"></i>`
+            }
+        </div>
+        <div class="user-item-info">
+            <div class="user-item-name">${group.name}</div>
+            <div class="user-item-status">${membersCount} участников • ${group.settings.public ? 'Открытая' : 'Закрытая'}</div>
+        </div>
+        <button class="join-group-btn" style="padding: 5px 10px; background: linear-gradient(to right, #4facfe, #00f2fe); color: white; border: none; border-radius: 15px; cursor: pointer; font-size: 12px;">Вступить</button>
+    `;
+    
+    groupItem.querySelector('.join-group-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        joinGroup(groupId, group.name);
+    });
+    
+    groupItem.addEventListener('click', () => {
+        showGroupInfoModal(groupId, group);
+    });
+    
+    document.getElementById('groupsList').appendChild(groupItem);
 }
 
 // Вспомогательные функции
@@ -2189,6 +2646,82 @@ const groupStyles = `
         transform: scale(1.1);
     }
 
+    .group-invite-message {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 15px;
+        color: white;
+        margin: 10px 0;
+        max-width: 85%;
+        position: relative;
+    }
+
+    .group-invite-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+
+    .group-invite-content {
+        margin-bottom: 10px;
+    }
+
+    .group-invite-name {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .group-invite-sender {
+        font-size: 12px;
+        opacity: 0.8;
+        margin-bottom: 10px;
+    }
+
+    .group-invite-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .group-invite-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .context-menu {
+        background: var(--header-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 8px 0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        z-index: 1000;
+        min-width: 150px;
+    }
+
+    .context-menu-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+
+    .context-menu-item:hover {
+        background: var(--other-msg-bg);
+    }
+
     /* Адаптивность для мобильных */
     @media (max-width: 768px) {
         .group-chat-header {
@@ -2223,6 +2756,25 @@ const groupStyles = `
         .chat-menu-content {
             min-width: 180px;
             right: 5px;
+        }
+
+        .group-invite-message {
+            max-width: 95%;
+            padding: 12px;
+        }
+
+        .group-invite-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        .context-menu {
+            min-width: 140px;
+        }
+
+        .context-menu-item {
+            padding: 12px 15px;
+            font-size: 14px;
         }
     }
 
@@ -2278,6 +2830,22 @@ const groupStyles = `
         .react-btn {
             font-size: 10px;
         }
+
+        .group-invite-message {
+            padding: 10px;
+            max-width: 100%;
+        }
+
+        .group-invite-name {
+            font-size: 14px;
+        }
+
+        .group-invite-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: 100%;
+            justify-content: center;
+        }
     }
 
     @media (max-width: 360px) {
@@ -2305,6 +2873,23 @@ const groupStyles = `
             padding: 6px;
             font-size: 12px;
         }
+
+        .group-invite-message {
+            padding: 8px;
+        }
+
+        .group-invite-header {
+            font-size: 12px;
+        }
+
+        .group-invite-name {
+            font-size: 13px;
+        }
+
+        .group-invite-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
     }
 
     /* Улучшения для touch-устройств */
@@ -2327,6 +2912,16 @@ const groupStyles = `
         
         .chat-menu-item {
             padding: 12px 15px;
+            font-size: 16px;
+        }
+
+        .group-invite-btn {
+            padding: 12px 20px;
+            font-size: 16px;
+        }
+
+        .context-menu-item {
+            padding: 15px 20px;
             font-size: 16px;
         }
     }

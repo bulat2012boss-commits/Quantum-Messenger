@@ -3,8 +3,7 @@
 // Конфигурация
 const FILE_SHARING_CONFIG = {
     MAX_FILE_SIZE: 1024 * 1024 * 1024, // 1 GB
-    CHUNK_SIZE: 512 * 1024, // 512 KB chunks for large files
-    MAX_DATA_URL_SIZE: 10 * 1024 * 1024, // 10MB max for data URLs
+    CHUNK_SIZE: 1024 * 1024, // 1 MB chunks for large files
     ALLOWED_TYPES: [
         'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
         'video/mp4', 'video/avi', 'video/mkv', 'video/mov', 'video/webm',
@@ -24,9 +23,7 @@ const FILE_SHARING_CONFIG = {
         images: true,
         maxImageWidth: 1920,
         maxImageHeight: 1080,
-        quality: 0.8,
-        videos: false,
-        maxVideoSize: 100 * 1024 * 1024 // 100MB
+        quality: 0.8
     }
 };
 
@@ -34,34 +31,30 @@ const FILE_SHARING_CONFIG = {
 let currentUploadingFile = null;
 let uploadProgress = 0;
 let isUploading = false;
-let uploadCanceled = false;
 
 // Инициализация модуля отправки файлов
 function initFileSharing() {
     console.log("Initializing File Sharing module...");
     
-    // Ждем полной загрузки DOM
-    setTimeout(() => {
-        createFileUploadElements();
-        addFileSharingEventListeners();
-        patchExistingFunctions();
-        console.log("File Sharing module initialized successfully");
-    }, 500);
+    // Создаем элементы для загрузки файлов
+    createFileUploadElements();
+    
+    // Добавляем обработчики событий
+    addFileSharingEventListeners();
+    
+    // Модифицируем существующие функции
+    patchExistingFunctions();
+    
+    console.log("File Sharing module initialized successfully");
 }
 
-// Создание элементов для загрузки файлов
+// Создание элементов интерфейса для загрузки файлов
 function createFileUploadElements() {
-    // Удаляем существующие элементы чтобы избежать дублирования
-    const existingInput = document.getElementById('fileInput');
-    const existingButton = document.getElementById('attachButton');
-    if (existingInput) existingInput.remove();
-    if (existingButton) existingButton.remove();
-
     // Создаем скрытый input для выбора файлов
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.id = 'fileInput';
-    fileInput.multiple = false;
+    fileInput.multiple = true;
     fileInput.accept = '*/*';
     fileInput.style.display = 'none';
     
@@ -83,8 +76,6 @@ function createFileUploadElements() {
         justify-content: center;
         transition: all 0.2s ease;
         font-size: 16px;
-        flex-shrink: 0;
-        margin-right: 8px;
     `;
 
     // Добавляем hover эффекты
@@ -101,53 +92,18 @@ function createFileUploadElements() {
     // Добавляем элементы в DOM
     const inputArea = document.querySelector('.input-area');
     if (inputArea) {
-        // Вставляем кнопку перед полем ввода сообщения
-        const messageInput = inputArea.querySelector('input');
-        inputArea.insertBefore(attachButton, messageInput);
+        inputArea.insertBefore(attachButton, inputArea.querySelector('input'));
         inputArea.appendChild(fileInput);
     }
     
-    // Создаем модальные окна (если их еще нет)
+    // Создаем модальные окна
     createFilePreviewModal();
     createUploadProgressModal();
     createFileManagerModal();
-    createLargeFileModal();
-}
-
-// Создание модального окна для больших файлов
-function createLargeFileModal() {
-    if (document.getElementById('largeFileModal')) return;
-    
-    const modalHTML = `
-        <div class="modal" id="largeFileModal">
-            <div class="modal-content" style="max-width: 500px;">
-                <h3 style="margin-bottom: 15px; text-align: center;">Большой файл</h3>
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #FF9800; margin-bottom: 15px;"></i>
-                    <div id="largeFileName" style="font-weight: bold; margin-bottom: 10px; word-break: break-all;"></div>
-                    <div id="largeFileSize" style="font-size: 14px; opacity: 0.7; margin-bottom: 15px;"></div>
-                    <p style="margin-bottom: 15px;">Этот файл довольно большой. Отправка может занять некоторое время и использовать мобильный трафик.</p>
-                    <p style="font-size: 14px; opacity: 0.8;">Рекомендуется использовать Wi-Fi для больших файлов.</p>
-                </div>
-                <div class="modal-buttons">
-                    <button class="modal-btn primary" id="confirmLargeFileBtn">
-                        <i class="fas fa-paper-plane"></i> Все равно отправить
-                    </button>
-                    <button class="modal-btn secondary" id="cancelLargeFileBtn">
-                        <i class="fas fa-times"></i> Отмена
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
 // Создание модального окна для предпросмотра файлов
 function createFilePreviewModal() {
-    if (document.getElementById('filePreviewModal')) return;
-    
     const modalHTML = `
         <div class="modal" id="filePreviewModal">
             <div class="modal-content" style="max-width: 600px; max-height: 90vh;">
@@ -188,8 +144,6 @@ function createFilePreviewModal() {
 
 // Создание модального окна для прогресса загрузки
 function createUploadProgressModal() {
-    if (document.getElementById('uploadProgressModal')) return;
-    
     const modalHTML = `
         <div class="modal" id="uploadProgressModal">
             <div class="modal-content" style="max-width: 500px;">
@@ -208,7 +162,6 @@ function createUploadProgressModal() {
                     <!-- Дополнительная информация -->
                     <div id="uploadSpeed" style="font-size: 12px; opacity: 0.7; margin-top: 10px;"></div>
                     <div id="uploadTimeLeft" style="font-size: 12px; opacity: 0.7;"></div>
-                    <div id="uploadStage" style="font-size: 12px; opacity: 0.7; margin-top: 5px;"></div>
                 </div>
                 <div class="modal-buttons">
                     <button class="modal-btn secondary" id="cancelUploadBtn">
@@ -224,8 +177,6 @@ function createUploadProgressModal() {
 
 // Создание модального окна для управления файлами
 function createFileManagerModal() {
-    if (document.getElementById('fileManagerModal')) return;
-    
     const modalHTML = `
         <div class="modal" id="fileManagerModal">
             <div class="modal-content" style="max-width: 800px; max-height: 80vh;">
@@ -251,50 +202,43 @@ function createFileManagerModal() {
 
 // Добавление обработчиков событий для отправки файлов
 function addFileSharingEventListeners() {
-    // Используем делегирование событий для динамически созданных элементов
-    document.addEventListener('click', function(e) {
-        // Кнопка прикрепления файла
-        if (e.target.closest('#attachButton')) {
-            document.getElementById('fileInput').click();
-        }
-        
-        // Отправка файла из предпросмотра
-        if (e.target.closest('#sendFileBtn')) {
-            sendSelectedFile();
-        }
-        
-        // Отмена отправки файла из предпросмотра
-        if (e.target.closest('#cancelFileBtn')) {
-            closeFilePreview();
-        }
-        
-        // Отмена загрузки
-        if (e.target.closest('#cancelUploadBtn')) {
-            cancelUpload();
-        }
-        
-        // Закрытие менеджера файлов
-        if (e.target.closest('#closeFileManagerBtn')) {
-            document.getElementById('fileManagerModal').classList.remove('active');
-        }
-        
-        // Подтверждение отправки большого файла
-        if (e.target.closest('#confirmLargeFileBtn')) {
-            confirmLargeFile();
-        }
-        
-        // Отмена большого файла
-        if (e.target.closest('#cancelLargeFileBtn')) {
-            cancelLargeFile();
-        }
-    });
-
-    // Обработчик выбора файла
+    const attachButton = document.getElementById('attachButton');
     const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
+    const sendFileBtn = document.getElementById('sendFileBtn');
+    const cancelFileBtn = document.getElementById('cancelFileBtn');
+    const cancelUploadBtn = document.getElementById('cancelUploadBtn');
+    const closeFileManagerBtn = document.getElementById('closeFileManagerBtn');
+    
+    if (attachButton && fileInput) {
+        attachButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
         fileInput.addEventListener('change', handleFileSelect);
     }
-
+    
+    if (sendFileBtn) {
+        sendFileBtn.addEventListener('click', sendSelectedFile);
+    }
+    
+    if (cancelFileBtn) {
+        cancelFileBtn.addEventListener('click', () => {
+            document.getElementById('filePreviewModal').classList.remove('active');
+            fileInput.value = '';
+            currentUploadingFile = null;
+        });
+    }
+    
+    if (cancelUploadBtn) {
+        cancelUploadBtn.addEventListener('click', cancelUpload);
+    }
+    
+    if (closeFileManagerBtn) {
+        closeFileManagerBtn.addEventListener('click', () => {
+            document.getElementById('fileManagerModal').classList.remove('active');
+        });
+    }
+    
     // Drag and drop functionality
     setupDragAndDrop();
 }
@@ -354,7 +298,7 @@ function handleFileSelect(event) {
 
 // Обработка файлов (основная функция)
 function handleFiles(files) {
-    const file = files[0]; // Берем первый файл
+    const file = files[0]; // Берем первый файл (можно расширить для множественной загрузки)
     
     // Проверяем размер файла
     if (file.size > FILE_SHARING_CONFIG.MAX_FILE_SIZE) {
@@ -370,30 +314,8 @@ function handleFiles(files) {
     
     currentUploadingFile = file;
     
-    // Для больших файлов показываем предупреждение
-    if (file.size > 20 * 1024 * 1024) { // Больше 20MB
-        showLargeFileWarning(file);
-    } else {
-        // Показываем предпросмотр
-        showFilePreview(file);
-    }
-}
-
-// Показ предупреждения для больших файлов
-function showLargeFileWarning(file) {
-    const modal = document.getElementById('largeFileModal');
-    const fileName = document.getElementById('largeFileName');
-    const fileSize = document.getElementById('largeFileSize');
-    
-    if (!modal || !fileName || !fileSize) {
-        console.error('Large file modal elements not found');
-        return;
-    }
-    
-    fileName.textContent = file.name;
-    fileSize.textContent = formatFileSize(file.size);
-    
-    modal.classList.add('active');
+    // Показываем предпросмотр
+    showFilePreview(file);
 }
 
 // Показ предпросмотра файла
@@ -404,11 +326,6 @@ function showFilePreview(file) {
     const fileSize = document.getElementById('fileSizePreview');
     const fileType = document.getElementById('fileTypePreview');
     const fileStatus = document.getElementById('fileStatusPreview');
-    
-    if (!modal || !content) {
-        console.error('File preview modal elements not found');
-        return;
-    }
     
     // Очищаем предыдущий предпросмотр
     content.innerHTML = '';
@@ -501,43 +418,6 @@ function showFilePreview(file) {
     modal.classList.add('active');
 }
 
-// Закрытие предпросмотра файла
-function closeFilePreview() {
-    const modal = document.getElementById('filePreviewModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.value = '';
-    }
-    currentUploadingFile = null;
-}
-
-// Подтверждение отправки большого файла
-function confirmLargeFile() {
-    const modal = document.getElementById('largeFileModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-    if (currentUploadingFile) {
-        startFileUpload(currentUploadingFile);
-    }
-}
-
-// Отмена большого файла
-function cancelLargeFile() {
-    const modal = document.getElementById('largeFileModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.value = '';
-    }
-    currentUploadingFile = null;
-}
-
 // Отправка выбранного файла
 async function sendSelectedFile() {
     const fileInput = document.getElementById('fileInput');
@@ -551,27 +431,14 @@ async function sendSelectedFile() {
     }
     
     // Закрываем модальное окно предпросмотра
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    modal.classList.remove('active');
     
-    // Начинаем загрузку
-    await startFileUpload(currentUploadingFile);
+    // Показываем прогресс загрузки
+    showUploadProgress(currentUploadingFile);
     
-    if (fileInput) {
-        fileInput.value = '';
-    }
-    currentUploadingFile = null;
-}
-
-// Начало загрузки файла
-async function startFileUpload(file) {
     try {
-        // Показываем прогресс загрузки
-        showUploadProgress(file);
-        
         // Обрабатываем файл (сжатие и т.д.)
-        const processedFile = await processFile(file);
+        const processedFile = await processFile(currentUploadingFile);
         
         // Отправляем файл
         await sendFileMessage(processedFile);
@@ -579,19 +446,15 @@ async function startFileUpload(file) {
         // Скрываем прогресс загрузки
         hideUploadProgress();
         
-        showNotification(`Файл "${file.name}" успешно отправлен!`);
+        showNotification(`Файл "${currentUploadingFile.name}" успешно отправлен!`);
         
     } catch (error) {
         console.error("Ошибка отправки файла:", error);
         hideUploadProgress();
-        
-        if (error.message.includes('Quota exceeded') || error.message.includes('too large')) {
-            showNotification("Файл слишком большой для отправки. Попробуйте файл поменьше.");
-        } else if (uploadCanceled) {
-            showNotification("Отправка файла отменена");
-        } else {
-            showNotification("Ошибка отправки файла: " + error.message);
-        }
+        showNotification("Ошибка отправки файла: " + error.message);
+    } finally {
+        fileInput.value = '';
+        currentUploadingFile = null;
     }
 }
 
@@ -599,15 +462,7 @@ async function startFileUpload(file) {
 async function processFile(file) {
     // Если это изображение и включено сжатие
     if (FILE_SHARING_CONFIG.COMPRESSION.images && file.type.startsWith('image/') && file.size > 500 * 1024) {
-        updateUploadStage("Оптимизация изображения...");
         return await compressImage(file);
-    }
-    
-    // Для больших файлов показываем этап обработки
-    if (file.size > 10 * 1024 * 1024) {
-        updateUploadStage("Подготовка файла к отправке...");
-        // Даем время на отображение этапа
-        await new Promise(resolve => setTimeout(resolve, 500));
     }
     
     return file;
@@ -659,52 +514,84 @@ function showUploadProgress(file) {
     const fileName = document.getElementById('uploadFileName');
     const fileSize = document.getElementById('uploadFileSize');
     
-    if (!modal || !fileName || !fileSize) {
-        console.error('Upload progress modal elements not found');
-        return;
-    }
-    
     fileName.textContent = file.name;
     fileSize.textContent = formatFileSize(file.size);
     
     // Сбрасываем прогресс
-    updateUploadProgress(0, "Подготовка...");
+    updateUploadProgress(0);
     
     modal.classList.add('active');
     isUploading = true;
-    uploadCanceled = false;
+    
+    // Имитация прогресса загрузки (в реальном приложении здесь будет реальный прогресс)
+    simulateUploadProgress(file);
+}
+
+// Симуляция прогресса загрузки (для демонстрации)
+function simulateUploadProgress(file) {
+    let progress = 0;
+    const totalSteps = 100;
+    const stepTime = Math.max(50, file.size / FILE_SHARING_CONFIG.MAX_FILE_SIZE * 5000 / totalSteps);
+    
+    const interval = setInterval(() => {
+        if (!isUploading) {
+            clearInterval(interval);
+            return;
+        }
+        
+        progress += 1;
+        updateUploadProgress(progress);
+        
+        // Обновляем скорость загрузки и оставшееся время
+        updateUploadStats(progress, stepTime);
+        
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                if (isUploading) {
+                    hideUploadProgress();
+                }
+            }, 500);
+        }
+    }, stepTime);
 }
 
 // Обновление прогресса загрузки
-function updateUploadProgress(progress, stage = "") {
+function updateUploadProgress(progress) {
     const progressBar = document.getElementById('uploadProgressBar');
     const progressText = document.getElementById('uploadProgressText');
-    const stageElement = document.getElementById('uploadStage');
     
-    if (progressBar) progressBar.style.width = progress + '%';
-    if (progressText) progressText.textContent = progress + '%';
-    
-    if (stage && stageElement) {
-        stageElement.textContent = stage;
-    }
+    progressBar.style.width = progress + '%';
+    progressText.textContent = progress + '%';
     
     uploadProgress = progress;
 }
 
-// Обновление этапа загрузки
-function updateUploadStage(stage) {
-    const stageElement = document.getElementById('uploadStage');
-    if (stageElement) {
-        stageElement.textContent = stage;
+// Обновление статистики загрузки
+function updateUploadStats(progress, stepTime) {
+    const speedElement = document.getElementById('uploadSpeed');
+    const timeLeftElement = document.getElementById('uploadTimeLeft');
+    
+    if (progress > 0) {
+        const elapsedTime = (progress * stepTime) / 1000;
+        const uploadedBytes = (currentUploadingFile.size * progress) / 100;
+        const speed = uploadedBytes / elapsedTime;
+        
+        speedElement.textContent = `Скорость: ${formatFileSize(speed)}/сек`;
+        
+        if (progress < 100) {
+            const remainingTime = (100 - progress) * stepTime / 1000;
+            timeLeftElement.textContent = `Осталось: ${formatTimeLeft(remainingTime)}`;
+        } else {
+            timeLeftElement.textContent = 'Завершено';
+        }
     }
 }
 
 // Скрытие прогресса загрузки
 function hideUploadProgress() {
     const modal = document.getElementById('uploadProgressModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    modal.classList.remove('active');
     isUploading = false;
     uploadProgress = 0;
 }
@@ -712,55 +599,23 @@ function hideUploadProgress() {
 // Отмена загрузки
 function cancelUpload() {
     isUploading = false;
-    uploadCanceled = true;
     hideUploadProgress();
     showNotification("Отправка файла отменена");
 }
 
 // Отправка сообщения с файлом
 function sendFileMessage(file) {
-    return new Promise(async (resolve, reject) => {
-        if (uploadCanceled) {
-            reject(new Error("Upload canceled"));
-            return;
-        }
-
-        updateUploadStage("Чтение файла...");
-        
-        try {
-            // Для больших файлов используем chunking
-            if (file.size > FILE_SHARING_CONFIG.MAX_DATA_URL_SIZE) {
-                await sendLargeFile(file);
-            } else {
-                await sendSmallFile(file);
-            }
-            resolve();
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-// Отправка маленького файла (до 10MB)
-function sendSmallFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         
         reader.onload = function(e) {
-            if (uploadCanceled) {
-                reject(new Error("Upload canceled"));
-                return;
-            }
-            
-            updateUploadProgress(50, "Отправка на сервер...");
-            
             const fileData = {
                 name: file.name,
                 type: file.type,
                 size: file.size,
                 data: e.target.result,
                 timestamp: Date.now(),
-                compressed: file.size !== currentUploadingFile?.size
+                compressed: file.size !== currentUploadingFile.size
             };
             
             const messageId = database.ref('messages').push().key;
@@ -783,84 +638,16 @@ function sendSmallFile(file) {
             // Сохраняем сообщение в базе данных
             database.ref('messages/' + messageId).set(messageData)
                 .then(() => {
-                    updateUploadProgress(100, "Файл отправлен!");
-                    
                     // Обновляем информацию о чате
                     const lastMessageText = `📎 ${file.name}`;
                     updateChatInfo(chatId, lastMessageText, timestamp);
-                    
-                    setTimeout(resolve, 500);
+                    resolve();
                 })
                 .catch(reject);
         };
         
-        reader.onerror = () => {
-            reject(new Error("Ошибка чтения файла"));
-        };
-        
-        reader.onprogress = (event) => {
-            if (event.lengthComputable) {
-                const progress = (event.loaded / event.total) * 50; // 50% за чтение
-                updateUploadProgress(progress, "Чтение файла...");
-            }
-        };
-        
+        reader.onerror = reject;
         reader.readAsDataURL(file);
-    });
-}
-
-// Отправка большого файла (более 10MB)
-function sendLargeFile(file) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            updateUploadStage("Обработка большого файла...");
-            
-            // Для больших файлов мы не можем хранить data URL, поэтому сохраняем только метаданные
-            const fileData = {
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                data: null, // Не храним данные для больших файлов
-                timestamp: Date.now(),
-                compressed: false,
-                isLargeFile: true,
-                chunks: Math.ceil(file.size / FILE_SHARING_CONFIG.CHUNK_SIZE)
-            };
-            
-            const messageId = database.ref('messages').push().key;
-            const timestamp = Date.now();
-            const chatId = currentChatId || generateChatId(currentChatWith);
-            
-            const messageData = {
-                id: messageId,
-                type: 'file',
-                file: fileData,
-                senderId: userId,
-                senderName: currentUser,
-                receiverId: currentChatWith,
-                receiverName: currentChatWithName,
-                timestamp: timestamp,
-                chatId: chatId,
-                read: false,
-                largeFileNotice: `Файл слишком большой для предпросмотра: ${file.name} (${formatFileSize(file.size)})`
-            };
-            
-            updateUploadProgress(70, "Сохранение информации о файле...");
-            
-            // Сохраняем сообщение в базе данных
-            await database.ref('messages/' + messageId).set(messageData);
-            
-            updateUploadProgress(100, "Файл зарегистрирован!");
-            
-            // Обновляем информацию о чате
-            const lastMessageText = `📎 ${file.name}`;
-            updateChatInfo(chatId, lastMessageText, timestamp);
-            
-            setTimeout(resolve, 500);
-            
-        } catch (error) {
-            reject(error);
-        }
     });
 }
 
@@ -887,6 +674,17 @@ function formatVideoDuration(seconds) {
         return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     } else {
         return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+}
+
+// Форматирование оставшегося времени
+function formatTimeLeft(seconds) {
+    if (seconds < 60) {
+        return Math.round(seconds) + ' сек';
+    } else if (seconds < 3600) {
+        return Math.round(seconds / 60) + ' мин';
+    } else {
+        return Math.round(seconds / 3600) + ' ч';
     }
 }
 
@@ -961,23 +759,7 @@ function displayFileMessage(message) {
     let fileContent = '';
     const file = message.file;
     
-    // Проверяем, это большой файл без данных
-    if (file.isLargeFile) {
-        fileContent = `
-            <div class="file-message-content">
-                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px;">
-                    <i class="fas fa-file" style="font-size: 32px; color: #a0d2eb;"></i>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 500; margin-bottom: 4px;">${file.name}</div>
-                        <div style="font-size: 12px; opacity: 0.7;">
-                            ${formatFileSize(file.size)} · ${getFileType(file.type)}
-                            <br><span style="color: #FF9800;">⚠ Файл слишком большой для предпросмотра</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (file.type.startsWith('image/')) {
+    if (file.type.startsWith('image/')) {
         fileContent = `
             <div class="file-message-content">
                 <div class="file-preview" onclick="openFilePreview('${file.data}', '${file.name}')">
@@ -1054,12 +836,6 @@ function displayFileMessage(message) {
 
 // Открытие превью файла в полном размере
 function openFilePreview(src, filename) {
-    // Удаляем существующее модальное окно если есть
-    const existingModal = document.getElementById('fullscreenPreviewModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
     const modalHTML = `
         <div class="modal" id="fullscreenPreviewModal" style="background: rgba(0,0,0,0.95);">
             <div class="modal-content" style="background: transparent; border: none; box-shadow: none; max-width: 95vw; max-height: 95vh; width: auto;">
@@ -1102,11 +878,6 @@ function openFilePreview(src, filename) {
 
 // Скачивание файла
 function downloadFile(dataUrl, filename) {
-    if (!dataUrl) {
-        showNotification("Этот файл слишком большой и не может быть скачан напрямую");
-        return;
-    }
-    
     const link = document.createElement('a');
     link.href = dataUrl;
     link.download = filename;
@@ -1123,11 +894,6 @@ function downloadFile(dataUrl, filename) {
 function showFileManager() {
     const modal = document.getElementById('fileManagerModal');
     const content = document.getElementById('fileManagerContent');
-    
-    if (!modal || !content) {
-        console.error('File manager modal not found');
-        return;
-    }
     
     content.innerHTML = '<div class="empty-chat"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><p>Загрузка файлов...</p></div>';
     
@@ -1175,8 +941,6 @@ function loadChatFiles(chatId) {
 function displayFilesInManager(files) {
     const content = document.getElementById('fileManagerContent');
     
-    if (!content) return;
-    
     if (files.length === 0) {
         content.innerHTML = '<div class="empty-chat"><i class="fas fa-folder-open"></i><p>Файлы не найдены</p></div>';
         return;
@@ -1185,24 +949,18 @@ function displayFilesInManager(files) {
     let html = '';
     
     files.forEach((file, index) => {
-        const canDownload = !file.isLargeFile && file.data;
-        const clickAction = canDownload ? `onclick="downloadFile('${file.data}', '${file.name}')"` : '';
-        const cursorStyle = canDownload ? 'cursor: pointer;' : 'cursor: not-allowed;';
-        const opacityStyle = canDownload ? '' : 'opacity: 0.6;';
-        
         html += `
-            <div class="file-manager-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px; margin-bottom: 8px; ${cursorStyle} ${opacityStyle}"
-                 ${clickAction}>
+            <div class="file-manager-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px; margin-bottom: 8px; cursor: pointer;"
+                 onclick="downloadFile('${file.data}', '${file.name}')">
                 <i class="fas ${getFileIcon(file.type)}" style="font-size: 24px; color: #a0d2eb;"></i>
                 <div style="flex: 1;">
                     <div style="font-weight: 500; margin-bottom: 4px;">${file.name}</div>
                     <div style="font-size: 12px; opacity: 0.7;">
                         ${formatFileSize(file.size)} · ${getFileType(file.type)}
-                        ${file.isLargeFile ? '<br><span style="color: #FF9800;">⚠ Слишком большой для скачивания</span>' : ''}
                         <br>От: ${file.senderName} · ${new Date(file.timestamp).toLocaleDateString()}
                     </div>
                 </div>
-                ${canDownload ? '<i class="fas fa-download" style="opacity: 0.7;"></i>' : '<i class="fas fa-ban" style="opacity: 0.5;"></i>'}
+                <i class="fas fa-download" style="opacity: 0.7;"></i>
             </div>
         `;
     });
@@ -1236,10 +994,9 @@ function patchExistingFunctions() {
 // Добавление кнопки менеджера файлов в меню чата
 function addFileManagerToChatMenu() {
     const chatMenuContent = document.getElementById('chatMenuContent');
-    if (chatMenuContent && !document.getElementById('fileManagerMenuItem')) {
+    if (chatMenuContent) {
         const fileManagerItem = document.createElement('div');
         fileManagerItem.className = 'chat-menu-item';
-        fileManagerItem.id = 'fileManagerMenuItem';
         fileManagerItem.innerHTML = '<i class="fas fa-folder-open"></i> Файлы чата';
         fileManagerItem.addEventListener('click', showFileManager);
         
@@ -1257,10 +1014,9 @@ function addFileManagerToChatMenu() {
 document.addEventListener('DOMContentLoaded', function() {
     // Ждем инициализации Firebase и других модулей
     const initInterval = setInterval(() => {
-        if (typeof firebase !== 'undefined' && typeof database !== 'undefined' && typeof userId !== 'undefined') {
+        if (typeof firebase !== 'undefined' && typeof database !== 'undefined') {
             clearInterval(initInterval);
-            // Даем дополнительное время на загрузку DOM
-            setTimeout(initFileSharing, 1000);
+            setTimeout(initFileSharing, 500);
         }
     }, 100);
 });
