@@ -1,0 +1,40 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install Cordova
+      run: |
+        npm install -g cordova
+        
+    - name: Build APK
+      run: |
+        cordova platform add android
+        cordova build android --release
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: quantum-messenger-apk
+        path: platforms/android/app/build/outputs/apk/release/*.apk
+        retention-days: 30
