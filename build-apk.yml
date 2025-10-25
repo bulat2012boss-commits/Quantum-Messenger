@@ -1,0 +1,72 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install dependencies
+      run: |
+        npm install -g cordova
+        sudo apt-get update
+        sudo apt-get install -y libnss3-dev
+        
+    - name: Create Cordova project structure
+      run: |
+        # Создаем базовую структуру Cordova
+        cordova create android-app com.quantum.messenger "Quantum Messenger"
+        cd android-app
+        
+        # Копируем ваши веб-файлы в www папку
+        cp -r ../* ./www/ 2>/dev/null || true
+        
+        # Удаляем лишние файлы которые могут мешать
+        rm -f ./www/README.md ./www/.gitignore 2>/dev/null || true
+        
+        # Добавляем Android платформу
+        cordova platform add android@12.0.0
+        
+    - name: Build APK
+      run: |
+        cd android-app
+        cordova build android --release --verbose
+        
+    - name: List generated APK files
+      run: |
+        find . -name "*.apk" -type f | head -10
+        ls -la android-app/platforms/android/app/build/outputs/apk/
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: quantum-messenger-apk
+        path: android-app/platforms/android/app/build/outputs/apk/release/*.apk
+        retention-days: 30
+        if-no-files-found: error
+        
+    - name: Upload debug APK (fallback)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: quantum-messenger-debug-apk
+        path: android-app/platforms/android/app/build/outputs/apk/debug/*.apk
+        retention-days: 30
