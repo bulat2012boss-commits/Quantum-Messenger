@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quantum Messenger</title>
+    <!-- Quantum Notifications Manifest -->
+    <link rel="manifest" href="quantum-manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192x192.png">
+    <meta name="theme-color" content="#4facfe">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -1125,6 +1131,237 @@
                 gap: 8px;
             }
         }
+        /* Стили для системы кастомизации тем */
+.theme-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.theme-option:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.theme-option.active {
+    border-color: #4facfe;
+    background: rgba(79, 172, 254, 0.1);
+}
+
+.theme-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.theme-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.theme-name {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.theme-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.theme-action-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    background: rgba(255,255,255,0.1);
+    color: var(--text-color);
+}
+
+.theme-action-btn:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.1);
+}
+
+/* Стили для списка пользовательских тем */
+.user-theme-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.user-theme-item:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.user-theme-item.active {
+    border-color: #4facfe;
+    background: rgba(79, 172, 254, 0.1);
+}
+
+.theme-preview-large {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.theme-details {
+    flex: 1;
+}
+
+.theme-type {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+/* Стили для применения темы к чату */
+.chat-theme-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-theme-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.chat-theme-option:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.chat-theme-option.active {
+    border-color: #4facfe;
+    background: rgba(79, 172, 254, 0.1);
+}
+
+.chat-theme-option .theme-preview {
+    width: 40px;
+    height: 40px;
+}
+
+.theme-check {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4facfe;
+}
+
+/* Color pickers */
+.color-pickers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.color-pickers input[type="color"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: none;
+}
+
+.color-pickers input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-pickers input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+/* Адаптивность для системы тем */
+@media (max-width: 480px) {
+    .theme-option {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .theme-preview {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .user-theme-item {
+        padding: 12px;
+        gap: 10px;
+    }
+    
+    .theme-preview-large {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .theme-actions {
+        flex-direction: column;
+    }
+    
+    .theme-action-btn {
+        width: 25px;
+        height: 25px;
+        font-size: 10px;
+    }
+    
+    .color-pickers {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Стили для светлой темы */
+.light-theme .theme-option:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+.light-theme .user-theme-item {
+    background: rgba(0,0,0,0.05);
+}
+
+.light-theme .user-theme-item:hover {
+    background: rgba(0,0,0,0.08);
+}
+
+.light-theme .chat-theme-option:hover {
+    background: rgba(0,0,0,0.05);
+}
     </style>
 <link rel="stylesheet" href="animations.css">
 </head>
@@ -2060,33 +2297,38 @@
         }
         
         // Вход в чат
-        function enterChat() {
-            const name = nameInput.value.trim();
-            
-            if (name) {
-                currentUser = name;
-                userColor = generateUserColor();
-                
-                // Сохраняем имя пользователя
-                localStorage.setItem('quantumUsername', name);
-                
-                // Переключаем видимость контейнеров
-                authContainer.style.display = 'none';
-                chatWrapper.style.display = 'flex';
-                
-                // Настраиваем профиль пользователя
-                setupUserProfile();
-                
-                // Загружаем список чатов
-                loadChatsList();
-                
-                // Показываем уведомление о входе
-                showNotification(`Добро пожаловать, ${name}!`);
-            } else {
-                alert("Пожалуйста, введите ваше имя");
-                nameInput.focus();
-            }
+function enterChat() {
+    const name = nameInput.value.trim();
+    
+    if (name) {
+        currentUser = name;
+        userColor = generateUserColor();
+        
+        // Сохраняем имя пользователя
+        localStorage.setItem('quantumUsername', name);
+        
+         // 🔔 ПРОСТО ДОБАВЬТЕ ЭТУ СТРОКУ
+        if (typeof initSimpleNotify === 'function') {
+            initSimpleNotify(userId, name);
         }
+        
+        // Переключаем видимость контейнеров
+        authContainer.style.display = 'none';
+        chatWrapper.style.display = 'flex';
+        
+        // Настраиваем профиль пользователя
+        setupUserProfile();
+        
+        // Загружаем список чатов
+        loadChatsList();
+        
+        // Показываем уведомление о входе
+        showNotification(`Добро пожаловать, ${name}!`);
+    } else {
+        alert("Пожалуйста, введите ваше имя");
+        nameInput.focus();
+    }
+}
         
         // Настройка профиля пользователя
         function setupUserProfile() {
@@ -2901,6 +3143,45 @@
             }
         }
     </script>
+    <!-- После других скриптов -->
+<script src="channels-core.js"></script>
+<script src="channels-ui.js"></script>
+<script src="channels-events.js"></script>
+<script src="channels-list.js"></script>
+<script src="channels-modals.js"></script>
+<script src="channels-join.js"></script>
+<script src="channels-chat.js"></script>
+<script src="channels-messages.js"></script>
+<script src="channels-posts.js"></script>
+<script src="channels-members.js"></script>
+<script src="channels-settings.js"></script>
+<script src="channels-mobile.js"></script>
+<script src="channels-utils.js"></script>
+<!-- ТОЛЬКО файловый менеджер -->
+<script src="channels-file-manager.js"></script>
+    <!-- После других скриптов -->
+<script src="gif-revolution.js"></script>
+<script src="inline-bots.js"></script>
+    <!-- После всех остальных скриптов -->
+<script src="quantum-privacy-eye.js"></script>
+    <!-- Quantum Real Notifications System -->
+<script src="quantum-sw.js"></script>
+<script src="quantum-notifications.js"></script>
+    <!-- После основного скрипта -->
+<script src="message.js"></script>
+    <script src="message-reply.js"></script>
+    <!-- После других скриптов -->
+<script src="delayed-messages.js"></script>
+    <!-- После других скриптов -->
+<script src="message-status.js"></script>
+    <!-- После других скриптов -->
+<script src="chat-scheduler.js"></script>
+    <!-- После других скриптов -->
+<script src="smart-replies.js"></script>
+    <script src="pinned-chats.js"></script>
+    <script src="quantum-entrance.js"></script>
+    <!-- После других скриптов -->
+<script src="message-actions.js"></script>
     <!-- После других скриптов -->
 <script src="favorites-chat.js"></script>
     <!-- После других скриптов -->
