@@ -2925,9 +2925,134 @@ const groupStyles = `
             font-size: 16px;
         }
     }
+    // Глобальная функция отправки сообщений в группу
+window.sendGroupMessage = function() {
+    const text = document.getElementById('groupMessageInput')?.value.trim();
+    
+    if (!text || !currentGroupId) return;
+    
+    // Проверяем, может ли пользователь писать в группу
+    database.ref('groups/' + currentGroupId).once('value').then((snapshot) => {
+        if (!snapshot.exists()) {
+            showNotification("Группа не найдена");
+            return;
+        }
+        
+        const group = snapshot.val();
+        const isAdmin = currentGroupRole === 'admin';
+        const canWrite = isAdmin || !group.settings.adminsOnly;
+        
+        if (!canWrite) {
+            showNotification("В этой группе могут писать только администраторы");
+            return;
+        }
+        
+        const messageId = database.ref('groupMessages').push().key;
+        const timestamp = Date.now();
+        
+        const messageData = {
+            id: messageId,
+            text: text,
+            senderId: userId,
+            senderName: currentUser,
+            groupId: currentGroupId,
+            groupName: currentGroupName,
+            timestamp: timestamp
+        };
+        
+        // Сохраняем сообщение в базе данных
+        database.ref('groupMessages/' + messageId).set(messageData)
+            .then(() => {
+                // Обновляем активность группы
+                database.ref('groups/' + currentGroupId).update({
+                    lastActivity: timestamp
+                });
+                
+                // Очищаем поле ввода
+                document.getElementById('groupMessageInput').value = '';
+                if (document.getElementById('sendGroupMessageBtn')) {
+                    document.getElementById('sendGroupMessageBtn').disabled = true;
+                }
+                
+                // Прокручиваем вниз
+                scrollGroupToBottom();
+            })
+            .catch((error) => {
+                console.error("Ошибка отправки сообщения:", error);
+                showNotification("Ошибка отправки сообщения");
+            });
+    }).catch((error) => {
+        console.error("Ошибка проверки группы:", error);
+        showNotification("Ошибка отправки сообщения");
+    });
+};
+
+// Также обновим обработчик в initGroupChatEventListeners
+function initGroupChatEventListeners(group) {
+    // Кнопка возврата к группам
+    document.getElementById('backToGroupsBtn').addEventListener('click', backToGroups);
+    
+    // Меню группы
+    document.getElementById('groupMenuBtn').addEventListener('click', () => {
+        document.getElementById('groupMenuContent').classList.toggle('active');
+    });
+    
+    // Пункты меню группы
+    document.getElementById('groupInfoBtn').addEventListener('click', showGroupInfoFromChat);
+    document.getElementById('groupMembersBtn').addEventListener('click', showGroupMembers);
+    document.getElementById('groupInviteBtn').addEventListener('click', showGroupInviteModal);
+    document.getElementById('clearGroupChatBtn').addEventListener('click', clearGroupChatHistory);
+    document.getElementById('leaveGroupBtn').addEventListener('click', leaveGroup);
+    
+    // Дополнительные пункты для админов
+    if (currentGroupRole === 'admin') {
+        document.getElementById('groupSettingsBtn').addEventListener('click', showGroupSettings);
+        document.getElementById('manageMembersBtn').addEventListener('click', showManageMembers);
+        document.getElementById('changeGroupAvatarBtn').addEventListener('click', changeGroupAvatar);
+    }
+    
+    // Отправка сообщений - используем глобальную функцию
+    const groupMessageInput = document.getElementById('groupMessageInput');
+    const sendGroupMessageBtn = document.getElementById('sendGroupMessageBtn');
+    
+    if (groupMessageInput && sendGroupMessageBtn) {
+        groupMessageInput.addEventListener('input', () => {
+            sendGroupMessageBtn.disabled = groupMessageInput.value.trim() === '';
+            handleTyping(true);
+        });
+        
+        groupMessageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleTyping(false);
+                window.sendGroupMessage(); // Используем глобальную функцию
+            }
+        });
+        
+        groupMessageInput.addEventListener('blur', () => {
+            handleTyping(false);
+        });
+        
+        sendGroupMessageBtn.addEventListener('click', () => {
+            handleTyping(false);
+            window.sendGroupMessage(); // Используем глобальную функцию
+        });
+    }
+    
+    // Закрытие меню при клике вне его
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('groupMenuBtn').contains(e.target) && 
+            !document.getElementById('groupMenuContent').contains(e.target)) {
+            document.getElementById('groupMenuContent').classList.remove('active');
+        }
+    });
+}
+
+console.log("Group message functions initialized");
 `;
 
 // Добавляем стили в документ
 const styleSheet = document.createElement('style');
 styleSheet.textContent = groupStyles;
 document.head.appendChild(styleSheet);
+
+

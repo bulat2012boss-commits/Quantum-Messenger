@@ -1,15 +1,19 @@
-// quantum-entrance.js
+// quantum-entrance.js - Обновленная версия с системой разработчика
 // Подключи этот файл после основного скрипта мессенджера
 
 document.addEventListener('DOMContentLoaded', function() {
     // Сначала проверяем, есть ли сохраненный пользователь
     const savedName = localStorage.getItem('quantumUsername');
     const savedUserId = localStorage.getItem('quantumUserId');
+    const isDeveloper = localStorage.getItem('quantumDeveloperMode') === 'true';
     
     if (savedName && savedUserId) {
         // Если пользователь уже заходил, сразу запускаем мессенджер без показа экрана входа
         console.log('Автоматический вход для пользователя:', savedName);
-        autoStartMessenger(savedName, savedUserId);
+        if (isDeveloper) {
+            console.log('Режим разработчика активирован');
+        }
+        autoStartMessenger(savedName, savedUserId, isDeveloper);
         return; // Прерываем выполнение, чтобы не показывать экран входа
     }
     
@@ -37,7 +41,7 @@ function createEntranceScreen() {
         <div class="entrance-content">
             <div class="logo-container">
                 <div class="quantum-logo">
-                    <div class="quantum-icon">⚛</div>
+                    <div class="quantium-icon">⚛</div>
                     <div class="quantum-orbits">
                         <div class="orbit orbit-1"></div>
                         <div class="orbit orbit-2"></div>
@@ -505,7 +509,64 @@ function createEntranceScreen() {
             font-size: 1.2rem;
             color: #a0d2eb;
         }
-        
+
+        /* Стили для режима разработчика */
+        .developer-auth {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 193, 7, 0.1);
+            border-radius: 10px;
+            border: 1px solid #ffc107;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        .developer-step {
+            margin-bottom: 15px;
+        }
+
+        .developer-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .developer-step h4 {
+            color: #ffc107;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .developer-auth input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .developer-auth button {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(45deg, #ffc107, #ff9800);
+            border: none;
+            border-radius: 5px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .developer-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ffc107;
+            color: black;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             .app-title {
                 font-size: 2rem;
@@ -585,34 +646,135 @@ function createEntranceScreen() {
             const name = document.getElementById('entranceNameInput').value.trim();
             
             if (name) {
-                // Сохраняем имя
-                localStorage.setItem('quantumUsername', name);
-                
-                // Генерируем ID пользователя если его нет
-                let userId = localStorage.getItem('quantumUserId');
-                if (!userId) {
-                    userId = this.generateUserId();
-                    localStorage.setItem('quantumUserId', userId);
+                // Проверяем режим разработчика
+                if (name === 'Бабаев Булат') {
+                    this.showDeveloperAuth();
+                    return;
                 }
                 
-                // Анимация исчезновения экрана входа
-                this.hideEntrance();
-                
-                // Запускаем основной мессенджер
-                setTimeout(() => {
-                    startMainMessenger(name, userId);
-                }, 1000);
+                // Обычный вход
+                this.processNormalLogin(name);
             } else {
                 this.shakeInput();
             }
+        },
+
+        showDeveloperAuth() {
+            const authHTML = `
+                <div class="developer-auth">
+                    <div class="developer-step">
+                        <h4>🔐 Шаг 1: Секретное слово</h4>
+                        <input type="password" id="devSecretInput" placeholder="Введите секретное слово" autocomplete="off">
+                    </div>
+                    <button id="devContinueBtn">Продолжить</button>
+                </div>
+            `;
+            
+            document.getElementById('entranceAuth').insertAdjacentHTML('beforeend', authHTML);
+            
+            document.getElementById('devContinueBtn').addEventListener('click', () => {
+                this.verifyDeveloperStep1();
+            });
+
+            document.getElementById('devSecretInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.verifyDeveloperStep1();
+                }
+            });
+        },
+
+        verifyDeveloperStep1() {
+            const secret = document.getElementById('devSecretInput').value;
+            
+            if (secret === 'кутактус') {
+                this.showDeveloperStep2();
+            } else {
+                this.shakeInput(document.getElementById('devSecretInput'));
+                alert('Неверное секретное слово!');
+            }
+        },
+
+        showDeveloperStep2() {
+            document.querySelector('.developer-auth').innerHTML = `
+                <div class="developer-step">
+                    <h4>🔢 Шаг 2: Любимое число</h4>
+                    <input type="number" id="devNumberInput" placeholder="Введите любимое число" autocomplete="off">
+                </div>
+                <button id="devFinalBtn">Войти как разработчик</button>
+            `;
+
+            document.getElementById('devFinalBtn').addEventListener('click', () => {
+                this.finalDeveloperAuth();
+            });
+
+            document.getElementById('devNumberInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.finalDeveloperAuth();
+                }
+            });
+
+            document.getElementById('devNumberInput').focus();
+        },
+
+        finalDeveloperAuth() {
+            const number = document.getElementById('devNumberInput').value;
+            
+            if (number === '0515') {
+                this.processDeveloperLogin('Бабаев Булат');
+            } else {
+                this.shakeInput(document.getElementById('devNumberInput'));
+                alert('Неверное число!');
+            }
+        },
+
+        processNormalLogin(name) {
+            // Сохраняем имя
+            localStorage.setItem('quantumUsername', name);
+            localStorage.setItem('quantumDeveloperMode', 'false');
+            
+            // Генерируем ID пользователя если его нет
+            let userId = localStorage.getItem('quantumUserId');
+            if (!userId) {
+                userId = this.generateUserId();
+                localStorage.setItem('quantumUserId', userId);
+            }
+            
+            // Анимация исчезновения экрана входа
+            this.hideEntrance();
+            
+            // Запускаем основной мессенджер
+            setTimeout(() => {
+                startMainMessenger(name, userId, false);
+            }, 1000);
+        },
+
+        processDeveloperLogin(name) {
+            // Сохраняем имя и режим разработчика
+            localStorage.setItem('quantumUsername', name);
+            localStorage.setItem('quantumDeveloperMode', 'true');
+            
+            // Генерируем ID пользователя если его нет
+            let userId = localStorage.getItem('quantumUserId');
+            if (!userId) {
+                userId = this.generateUserId();
+                localStorage.setItem('quantumUserId', userId);
+            }
+            
+            // Анимация исчезновения экрана входа
+            this.hideEntrance();
+            
+            // Запускаем основной мессенджер
+            setTimeout(() => {
+                startMainMessenger(name, userId, true);
+            }, 1000);
         },
         
         generateUserId() {
             return 'user-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
         },
         
-        shakeInput() {
-            const input = document.getElementById('entranceNameInput');
+        shakeInput(inputElement = null) {
+            const input = inputElement || document.getElementById('entranceNameInput');
             input.style.animation = 'shake 0.5s ease-in-out';
             input.focus();
             
@@ -666,8 +828,11 @@ function createEntranceScreen() {
 }
 
 // Функция автоматического запуска мессенджера
-function autoStartMessenger(name, userId) {
+function autoStartMessenger(name, userId, isDeveloper = false) {
     console.log('Автоматический запуск мессенджера для:', name);
+    if (isDeveloper) {
+        console.log('Режим разработчика активирован');
+    }
     
     // Скрываем стандартный контейнер авторизации
     const authContainer = document.getElementById('authContainer');
@@ -689,6 +854,12 @@ function autoStartMessenger(name, userId) {
     if (typeof window.userId === 'undefined') {
         window.userId = userId;
     }
+
+    // Устанавливаем режим разработчика
+    if (isDeveloper) {
+        window.isDeveloperMode = true;
+        this.setupDeveloperInterface();
+    }
     
     // Инициализируем профиль пользователя
     setupUserProfile(name, userId);
@@ -707,8 +878,11 @@ function autoStartMessenger(name, userId) {
 }
 
 // Функция запуска основного мессенджера
-function startMainMessenger(name, userId) {
+function startMainMessenger(name, userId, isDeveloper = false) {
     console.log('Запуск Quantum Messenger для пользователя:', name);
+    if (isDeveloper) {
+        console.log('Режим разработчика активирован');
+    }
     
     // Удаляем экран входа
     const entrance = document.getElementById('quantumEntrance');
@@ -736,6 +910,12 @@ function startMainMessenger(name, userId) {
     if (typeof window.userId === 'undefined') {
         window.userId = userId;
     }
+
+    // Устанавливаем режим разработчика
+    if (isDeveloper) {
+        window.isDeveloperMode = true;
+        this.setupDeveloperInterface();
+    }
     
     // Инициализируем профиль пользователя
     setupUserProfile(name, userId);
@@ -749,8 +929,44 @@ function startMainMessenger(name, userId) {
     
     // Показываем уведомление
     if (typeof showNotification === 'function') {
-        showNotification(`Добро пожаловать в Quantum Messenger, ${name}!`);
+        const message = isDeveloper ? 
+            `Добро пожаловать в режим разработчика, ${name}!` : 
+            `Добро пожаловать в Quantum Messenger, ${name}!`;
+        showNotification(message);
     }
+}
+
+// Настройка интерфейса разработчика
+function setupDeveloperInterface() {
+    // Добавляем бейдж разработчика в заголовок
+    const header = document.querySelector('.header');
+    if (header && !document.getElementById('developerBadge')) {
+        const badge = document.createElement('div');
+        badge.id = 'developerBadge';
+        badge.className = 'developer-badge';
+        badge.textContent = 'Developer';
+        header.style.position = 'relative';
+        header.appendChild(badge);
+    }
+
+    // Добавляем вкладку жалоб в бургер-меню
+    const burgerMenu = document.getElementById('burgerMenuContent');
+    if (burgerMenu && !document.getElementById('complaintsBtn')) {
+        const complaintItem = document.createElement('div');
+        complaintItem.className = 'burger-menu-item';
+        complaintItem.id = 'complaintsBtn';
+        complaintItem.innerHTML = '<i class="fas fa-flag"></i> Жалобы';
+        burgerMenu.appendChild(complaintItem);
+
+        // Обработчик вкладки жалоб
+        complaintItem.addEventListener('click', () => {
+            if (typeof window.complaintSystem !== 'undefined') {
+                window.complaintSystem.showComplaintsModal();
+            }
+        });
+    }
+
+    console.log('Интерфейс разработчика активирован');
 }
 
 // Настройка профиля пользователя

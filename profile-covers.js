@@ -1,10 +1,9 @@
 // group-search.js - Расширенный поиск сообщений для Quantum Messenger
 
 // Глобальные переменные для поиска
-// ИЗМЕНЕНИЕ: Переименовали все переменные чтобы избежать конфликтов
-let groupSearchResultsExtended = [];
-let currentSearchTypeExtended = 'user'; // 'user' или 'text'
-let currentSearchUserExtended = '';
+let groupSearchResults = [];
+let currentSearchType = 'user'; // 'user' или 'text'
+let currentSearchUser = '';
 
 // Инициализация функции поиска
 function initGroupSearch() {
@@ -335,7 +334,7 @@ function initSearchTypeSelector() {
             
             // Показываем нужную секцию
             const searchType = this.dataset.type;
-            currentSearchTypeExtended = searchType;
+            currentSearchType = searchType;
             
             if (searchType === 'user') {
                 document.getElementById('searchUserSection').style.display = 'block';
@@ -405,20 +404,20 @@ function loadGroupMembersForSearch(inputId, suggestionsId) {
 function performAdvancedSearch() {
     let searchTerm, userName;
     
-    if (currentSearchTypeExtended === 'user') {
+    if (currentSearchType === 'user') {
         userName = document.getElementById('searchUserInput').value.trim();
         if (!userName) {
             showNotification("Введите имя пользователя для поиска");
             return;
         }
         searchTerm = userName;
-    } else if (currentSearchTypeExtended === 'text') {
+    } else if (currentSearchType === 'text') {
         searchTerm = document.getElementById('searchTextInput').value.trim();
         if (!searchTerm) {
             showNotification("Введите текст для поиска");
             return;
         }
-    } else if (currentSearchTypeExtended === 'combined') {
+    } else if (currentSearchType === 'combined') {
         userName = document.getElementById('combinedUserInput').value.trim();
         searchTerm = document.getElementById('combinedTextInput').value.trim();
         
@@ -431,13 +430,13 @@ function performAdvancedSearch() {
     // Закрываем модальное окно поиска
     document.body.removeChild(document.getElementById('advancedSearchModal'));
 
-    if (currentSearchTypeExtended === 'user') {
+    if (currentSearchType === 'user') {
         showNotification(`🔍 Поиск всех сообщений от ${userName}...`);
         performUserMessagesSearch(userName, 'all');
-    } else if (currentSearchTypeExtended === 'text') {
+    } else if (currentSearchType === 'text') {
         showNotification(`🔍 Поиск сообщений содержащих "${searchTerm}"...`);
         performTextSearch(searchTerm);
-    } else if (currentSearchTypeExtended === 'combined') {
+    } else if (currentSearchType === 'combined') {
         if (userName && searchTerm) {
             showNotification(`🔍 Поиск сообщений от ${userName} содержащих "${searchTerm}"...`);
             performCombinedSearch(userName, searchTerm);
@@ -462,8 +461,7 @@ function performUserMessagesSearch(userName, searchContext = 'user') {
         }
 
         const messages = snapshot.val();
-        // ИЗМЕНЕНИЕ: Используем переименованную переменную
-        groupSearchResultsExtended = [];
+        groupSearchResults = [];
 
         // Ищем сообщения от указанного пользователя
         Object.keys(messages).forEach(messageId => {
@@ -471,7 +469,7 @@ function performUserMessagesSearch(userName, searchContext = 'user') {
             if (message.senderName && 
                 message.senderName.toLowerCase().includes(userName.toLowerCase()) && 
                 !message.isSystem) {
-                groupSearchResultsExtended.push({
+                groupSearchResults.push({
                     ...message,
                     id: messageId,
                     searchType: 'user',
@@ -481,7 +479,7 @@ function performUserMessagesSearch(userName, searchContext = 'user') {
         });
 
         // Сортируем по времени (новые сверху)
-        groupSearchResultsExtended.sort((a, b) => b.timestamp - a.timestamp);
+        groupSearchResults.sort((a, b) => b.timestamp - a.timestamp);
 
         // Показываем результаты
         if (searchContext === 'user') {
@@ -493,7 +491,7 @@ function performUserMessagesSearch(userName, searchContext = 'user') {
         showNotification("Ошибка поиска сообщений");
     });
     
-    return groupSearchResultsExtended;
+    return groupSearchResults;
 }
 
 // Поиск сообщений по тексту
@@ -507,8 +505,7 @@ function performTextSearch(searchText) {
         }
 
         const messages = snapshot.val();
-        // ИЗМЕНЕНИЕ: Используем переименованную переменную
-        groupSearchResultsExtended = [];
+        groupSearchResults = [];
 
         // Ищем сообщения содержащие указанный текст
         Object.keys(messages).forEach(messageId => {
@@ -516,7 +513,7 @@ function performTextSearch(searchText) {
             if (message.text && 
                 message.text.toLowerCase().includes(searchText.toLowerCase()) && 
                 !message.isSystem) {
-                groupSearchResultsExtended.push({
+                groupSearchResults.push({
                     ...message,
                     id: messageId,
                     searchType: 'text',
@@ -526,7 +523,7 @@ function performTextSearch(searchText) {
         });
 
         // Сортируем по времени (новые сверху)
-        groupSearchResultsExtended.sort((a, b) => b.timestamp - a.timestamp);
+        groupSearchResults.sort((a, b) => b.timestamp - a.timestamp);
 
         // Показываем результаты
         showTextSearchResults(searchText);
@@ -547,8 +544,7 @@ function performCombinedSearch(userName, searchText) {
         }
 
         const messages = snapshot.val();
-        // ИЗМЕНЕНИЕ: Используем переименованную переменную
-        groupSearchResultsExtended = [];
+        groupSearchResults = [];
 
         // Ищем сообщения от указанного пользователя содержащие указанный текст
         Object.keys(messages).forEach(messageId => {
@@ -558,7 +554,7 @@ function performCombinedSearch(userName, searchText) {
                 message.senderName.toLowerCase().includes(userName.toLowerCase()) && 
                 message.text.toLowerCase().includes(searchText.toLowerCase()) &&
                 !message.isSystem) {
-                groupSearchResultsExtended.push({
+                groupSearchResults.push({
                     ...message,
                     id: messageId,
                     searchType: 'combined',
@@ -569,7 +565,7 @@ function performCombinedSearch(userName, searchText) {
         });
 
         // Сортируем по времени (новые сверху)
-        groupSearchResultsExtended.sort((a, b) => b.timestamp - a.timestamp);
+        groupSearchResults.sort((a, b) => b.timestamp - a.timestamp);
 
         // Показываем результаты
         showCombinedSearchResults(userName, searchText);
@@ -584,7 +580,7 @@ function showUserMessagesSearchResults(userName) {
     showSearchResultsModal(
         userName, 
         'user', 
-        `Найдено ${groupSearchResultsExtended.length} сообщений от ${userName}`,
+        `Найдено ${groupSearchResults.length} сообщений от ${userName}`,
         `Все сообщения от пользователя <strong>${userName}</strong>`
     );
 }
@@ -594,7 +590,7 @@ function showTextSearchResults(searchText) {
     showSearchResultsModal(
         searchText, 
         'text', 
-        `Найдено ${groupSearchResultsExtended.length} сообщений содержащих "${searchText}"`,
+        `Найдено ${groupSearchResults.length} сообщений содержащих "${searchText}"`,
         `Сообщения содержащие текст: <strong>"${searchText}"</strong>`
     );
 }
@@ -604,7 +600,7 @@ function showCombinedSearchResults(userName, searchText) {
     showSearchResultsModal(
         `${userName} + "${searchText}"`, 
         'combined', 
-        `Найдено ${groupSearchResultsExtended.length} сообщений от ${userName} содержащих "${searchText}"`,
+        `Найдено ${groupSearchResults.length} сообщений от ${userName} содержащих "${searchText}"`,
         `Сообщения от <strong>${userName}</strong> содержащие текст: <strong>"${searchText}"</strong>`
     );
 }
@@ -617,8 +613,7 @@ function showSearchResultsModal(searchTerm, searchType, title, description) {
     
     let resultsHTML = '';
     
-    // ИЗМЕНЕНИЕ: Используем переименованную переменную
-    if (groupSearchResultsExtended.length === 0) {
+    if (groupSearchResults.length === 0) {
         resultsHTML = `
             <div class="empty-chat" style="padding: 40px 20px;">
                 <i class="fas fa-search" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
@@ -638,8 +633,7 @@ function showSearchResultsModal(searchTerm, searchType, title, description) {
                   border-radius: 8px; padding: 10px; background: var(--header-bg);">
         `;
         
-        // ИЗМЕНЕНИЕ: Используем переименованную переменную
-        groupSearchResultsExtended.forEach((message, index) => {
+        groupSearchResults.forEach((message, index) => {
             const date = new Date(message.timestamp);
             const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const dateString = date.toLocaleDateString();
@@ -682,7 +676,7 @@ function showSearchResultsModal(searchTerm, searchType, title, description) {
             </h3>
             ${resultsHTML}
             <div class="modal-buttons" style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                ${groupSearchResultsExtended.length > 0 ? `
+                ${groupSearchResults.length > 0 ? `
                     <button class="modal-btn primary" id="scrollToFirstBtn" style="background: linear-gradient(to right, #4facfe, #00f2fe);">
                         <i class="fas fa-arrow-down"></i> Перейти к первому
                     </button>
@@ -702,15 +696,13 @@ function showSearchResultsModal(searchTerm, searchType, title, description) {
     // Обработчики для результатов
     document.getElementById('closeResultsBtn').addEventListener('click', () => {
         document.body.removeChild(modal);
-        // ИЗМЕНЕНИЕ: Используем переименованную переменную
-        groupSearchResultsExtended = [];
+        groupSearchResults = [];
     });
 
-    // ИЗМЕНЕНИЕ: Используем переименованную переменную
-    if (groupSearchResultsExtended.length > 0) {
+    if (groupSearchResults.length > 0) {
         document.getElementById('scrollToFirstBtn').addEventListener('click', () => {
             document.body.removeChild(modal);
-            scrollToMessage(groupSearchResultsExtended[0].id);
+            scrollToMessage(groupSearchResults[0].id);
         });
         
         // Обработчики для клика по сообщениям в результатах
@@ -725,8 +717,7 @@ function showSearchResultsModal(searchTerm, searchType, title, description) {
     
     document.getElementById('newSearchBtn').addEventListener('click', () => {
         document.body.removeChild(modal);
-        // ИЗМЕНЕНИЕ: Используем переименованную переменную
-        groupSearchResultsExtended = [];
+        groupSearchResults = [];
         setTimeout(showAdvancedSearchModal, 300);
     });
     
@@ -734,8 +725,7 @@ function showSearchResultsModal(searchTerm, searchType, title, description) {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             document.body.removeChild(modal);
-            // ИЗМЕНЕНИЕ: Используем переименованную переменную
-            groupSearchResultsExtended = [];
+            groupSearchResults = [];
         }
     });
     
@@ -743,8 +733,7 @@ function showSearchResultsModal(searchTerm, searchType, title, description) {
     document.addEventListener('keydown', function closeResultsOnEsc(e) {
         if (e.key === 'Escape') {
             document.body.removeChild(modal);
-            // ИЗМЕНЕНИЕ: Используем переименованную переменную
-            groupSearchResultsExtended = [];
+            groupSearchResults = [];
             document.removeEventListener('keydown', closeResultsOnEsc);
         }
     });

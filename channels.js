@@ -1309,7 +1309,7 @@ function openChannel(channelId, channelName) {
                     ` : ''}
                     ${allowFiles ? `
                     <button id="attachFileBtn" style="padding: 8px 12px; background: var(--action-btn-bg); color: var(--action-btn-color); border: 1px solid var(--border-color); border-radius: 15px; cursor: pointer; font-size: 12px; transition: all 0.3s ease;">
-                        <i class="fas fa-paperclip"></i> Прикрепить файл
+                        
                     </button>
                     <input type="file" id="fileInput" multiple style="display: none;" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
                     ` : ''}
